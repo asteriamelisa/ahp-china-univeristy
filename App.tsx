@@ -15,7 +15,10 @@ const Icons = {
   Check: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
   Image: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
   ArrowLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
-  Sliders: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+  Sliders: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>,
+  Edit: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+  Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
 };
 
 // --- Types & Enums ---
@@ -28,6 +31,7 @@ enum View {
   CRITERIA_LIST,
   STUDENT_PREFERENCES, // New simple rating view
   PAIRWISE_COMPARISON, // Admin only AHP
+  MANAGE_UNIVERSITIES, // Admin manage data
   RESULTS,
   ADMIN_DASHBOARD
 }
@@ -40,7 +44,8 @@ const Button = ({ onClick, children, variant = 'primary', className = '', disabl
     primary: "bg-primary text-white hover:bg-blue-700 shadow-md hover:shadow-lg",
     secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200",
     outline: "border-2 border-primary text-primary hover:bg-blue-50",
-    danger: "bg-red-50 text-red-600 hover:bg-red-100"
+    danger: "bg-red-50 text-red-600 hover:bg-red-100",
+    success: "bg-green-600 text-white hover:bg-green-700 shadow-md"
   };
   return (
     <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant as keyof typeof variants]} ${className}`}>
@@ -199,6 +204,8 @@ const App = () => {
     </div>
   );
 
+  // --- Student View Components ---
+
   const StudentDashboard = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card className="col-span-1 md:col-span-2 bg-gradient-to-r from-primary to-blue-600 text-white border-none">
@@ -247,7 +254,6 @@ const App = () => {
     </div>
   );
 
-  // --- New Student Preferences View ---
   const StudentPreferences = () => {
     // Specific labels for each criterion to guide the student
     // Value 1 = Low Priority/Lenient. Value 5 = High Priority/Strict.
@@ -401,7 +407,6 @@ const App = () => {
           <Card key={uni.id} className="flex flex-col h-full hover:-translate-y-1 transition-transform p-6">
             <div className="flex items-start justify-between mb-4">
                <div className="flex items-center gap-4">
-                 {/* Image removed as requested */}
                  <div>
                     <h3 className="text-xl font-bold text-slate-800">{uni.name}</h3>
                     <p className="text-sm text-blue-600 font-medium flex items-center gap-1">
@@ -485,114 +490,388 @@ const App = () => {
     );
   };
 
-  // ADMIN ONLY AHP VIEW
+  // --- ADMIN ONLY VIEWS ---
+
+  const AdminDashboard = () => (
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">Admin Dashboard</h2>
+        <p className="text-secondary max-w-3xl">
+          Welcome to the control panel. Here you can manage the university data that students see and perform advanced criteria weighting using AHP.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Explanation Card: AHP */}
+        <Card className="bg-blue-50 border-blue-100 p-6">
+           <div className="flex items-start gap-4">
+             <div className="p-3 bg-white rounded-full text-primary shadow-sm"><Icons.Matrix /></div>
+             <div>
+               <h3 className="text-lg font-bold text-slate-800 mb-2">AHP (Analytic Hierarchy Process)</h3>
+               <p className="text-sm text-slate-700 leading-relaxed">
+                 A structured technique for organizing and analyzing complex decisions. As an admin, you use the <strong>Pairwise Comparison Matrix</strong> to compare criteria (e.g., "Is Tuition more important than Ranking?"). 
+                 <br/><br/>
+                 The system calculates <strong>Weights</strong> from your judgments. These weights are then used to rank universities.
+               </p>
+             </div>
+           </div>
+        </Card>
+
+        {/* Explanation Card: Data Management */}
+        <Card className="bg-purple-50 border-purple-100 p-6">
+           <div className="flex items-start gap-4">
+             <div className="p-3 bg-white rounded-full text-purple-600 shadow-sm"><Icons.University /></div>
+             <div>
+               <h3 className="text-lg font-bold text-slate-800 mb-2">Data & Scoring Levels</h3>
+               <p className="text-sm text-slate-700 leading-relaxed">
+                 You can edit university data (Rank, Tuition, etc.). The system automatically converts these raw values into a <strong>Score Level (1-5)</strong> based on predefined rules. 
+                 <br/><br/>
+                 <span className="font-semibold">Impact:</span> Changing a value here immediately updates the ranking calculations for all students.
+               </p>
+             </div>
+           </div>
+        </Card>
+      </div>
+
+      <h3 className="text-xl font-bold text-slate-800 mt-8">Quick Actions</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card onClick={() => setView(View.PAIRWISE_COMPARISON)} className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 hover:border-primary cursor-pointer group transition-all">
+           <div className="p-4 bg-blue-50 rounded-full mb-4 text-primary group-hover:bg-blue-100"><Icons.Matrix /></div>
+           <h3 className="font-bold">Go to AHP Matrix</h3>
+           <p className="text-xs text-secondary mt-2">Calculate criteria weights</p>
+        </Card>
+        <Card onClick={() => setView(View.MANAGE_UNIVERSITIES)} className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 hover:border-primary cursor-pointer group transition-all">
+           <div className="p-4 bg-slate-50 rounded-full mb-4 text-slate-600 group-hover:bg-slate-100"><Icons.Edit /></div>
+           <h3 className="font-bold">Manage Universities</h3>
+           <p className="text-xs text-secondary mt-2">Edit data & view score levels</p>
+        </Card>
+        <Card className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 opacity-50 cursor-not-allowed">
+           <div className="p-4 bg-slate-50 rounded-full mb-4"><Icons.User /></div>
+           <h3 className="font-bold">User Logs</h3>
+           <p className="text-xs text-secondary mt-2">Feature coming soon</p>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const ManageUniversities = () => {
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editForm, setEditForm] = useState<University | null>(null);
+
+    const handleEditClick = (uni: University) => {
+      setEditingId(uni.id);
+      setEditForm({ ...uni });
+    };
+
+    const handleSave = () => {
+      if (editForm) {
+        const updatedList = universities.map(u => u.id === editForm.id ? editForm : u);
+        setUniversities(updatedList);
+        setEditingId(null);
+        setEditForm(null);
+      }
+    };
+
+    const handleChange = (field: keyof University, value: any) => {
+      if (editForm) {
+        setEditForm({ ...editForm, [field]: value });
+      }
+    };
+
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+           <h2 className="text-2xl font-bold text-slate-800">Manage Universities & Data Levels</h2>
+           <Button variant="secondary" onClick={() => setView(View.ADMIN_DASHBOARD)}><Icons.ArrowLeft /> Back to Dashboard</Button>
+        </div>
+
+        <div className="space-y-4">
+          {universities.map(uni => {
+            const isEditing = editingId === uni.id;
+            
+            return (
+              <Card key={uni.id} className={`transition-all ${isEditing ? 'ring-2 ring-primary' : ''}`}>
+                {!isEditing ? (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-bold text-lg text-slate-800">{uni.name}</h3>
+                      <p className="text-sm text-secondary">{uni.city} • Rank #{uni.rankGlobal} • ¥{uni.tuition.toLocaleString()}</p>
+                    </div>
+                    <div className="flex gap-3">
+                      {/* Displaying Calculated Levels Preview */}
+                      <div className="hidden md:flex gap-2 mr-6">
+                        {criteria.map(c => {
+                          const rawVal = (() => {
+                             if (c.id === 'C1') return uni.rankGlobal;
+                             if (c.id === 'C2') return uni.rankSubject;
+                             if (c.id === 'C3') return uni.tuition;
+                             if (c.id === 'C4') return uni.cpiIndex;
+                             if (c.id === 'C5') return uni.englishPrograms;
+                             return uni.intlStudentPercent;
+                          })();
+                          const score = getCriterionScore(c.id, rawVal);
+                          return (
+                            <div key={c.id} className="flex flex-col items-center w-8">
+                              <span className="text-[10px] text-slate-400 font-bold">{c.id}</span>
+                              <span className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full ${score >= 4 ? 'bg-green-100 text-green-700' : score <= 2 ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                {score}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <Button variant="secondary" onClick={() => handleEditClick(uni)}>
+                        <Icons.Edit /> Edit Data
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex justify-between border-b pb-4">
+                      <h3 className="font-bold text-lg text-primary">Editing {uni.name}</h3>
+                      <div className="flex gap-2">
+                        <Button variant="secondary" onClick={() => setEditingId(null)}>Cancel</Button>
+                        <Button variant="success" onClick={handleSave}><Icons.Save /> Save Changes</Button>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">University Name</label>
+                         <input className="w-full p-2 border rounded" value={editForm?.name} onChange={(e) => handleChange('name', e.target.value)} />
+                      </div>
+                      <div>
+                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">City</label>
+                         <input className="w-full p-2 border rounded" value={editForm?.city} onChange={(e) => handleChange('city', e.target.value)} />
+                      </div>
+                      <div className="md:col-span-2">
+                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Description</label>
+                         <textarea className="w-full p-2 border rounded" rows={2} value={editForm?.description} onChange={(e) => handleChange('description', e.target.value)} />
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <h4 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                        <Icons.Chart /> Criterion Data & Calculated Levels (1-5)
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[
+                          { id: 'C1', label: 'Global Rank', field: 'rankGlobal' },
+                          { id: 'C2', label: 'Subject Rank', field: 'rankSubject' },
+                          { id: 'C3', label: 'Tuition (RMB)', field: 'tuition' },
+                          { id: 'C4', label: 'CPI Index', field: 'cpiIndex' },
+                          { id: 'C5', label: 'English Programs', field: 'englishPrograms' },
+                          { id: 'C6', label: 'Intl. Students %', field: 'intlStudentPercent' },
+                        ].map((item) => {
+                          // @ts-ignore
+                          const val = editForm?.[item.field];
+                          const score = getCriterionScore(item.id, Number(val));
+                          return (
+                            <div key={item.id} className="relative">
+                              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{item.label}</label>
+                              <div className="flex items-center gap-2">
+                                <input 
+                                  type="number" 
+                                  className="w-full p-2 border rounded" 
+                                  value={val} 
+                                  onChange={(e) => handleChange(item.field as keyof University, Number(e.target.value))} 
+                                />
+                                <div className={`flex flex-col items-center justify-center w-12 h-10 rounded border ${score >= 4 ? 'bg-green-100 border-green-200 text-green-700' : score <= 2 ? 'bg-red-100 border-red-200 text-red-700' : 'bg-yellow-100 border-yellow-200 text-yellow-700'}`}>
+                                   <span className="text-[10px] leading-none uppercase font-bold opacity-60">Lvl</span>
+                                   <span className="font-bold text-lg leading-none">{score}</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-slate-400 mt-4 text-right">
+                        *The "Level" (1-5) is automatically calculated from the raw value based on predefined ranges.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const PairwiseComparison = () => {
     return (
-      <div className="max-w-5xl mx-auto">
-         <div className="flex justify-between items-center mb-6">
+      <div className="max-w-6xl mx-auto">
+         <div className="flex items-center justify-between mb-6">
            <div>
-             <h2 className="text-2xl font-bold text-slate-800">Expert Analysis (AHP Matrix)</h2>
-             <p className="text-sm text-secondary">For Admins/Experts: Define precise weights using Saaty's scale.</p>
+             <h2 className="text-2xl font-bold text-slate-800">Pairwise Comparison Matrix</h2>
+             <p className="text-sm text-secondary">Evaluate the relative importance of criteria using the strict Saaty Scale (1-9).</p>
            </div>
-           <div className="flex gap-2">
-             <Button variant="secondary" onClick={() => {
-               const n = criteria.length;
-               setAhpMatrix(Array(n).fill(0).map(() => Array(n).fill(1)));
-               setAhpResult(null);
-             }}>Reset Matrix</Button>
-             <Button onClick={calculateAhpWeights}>Calculate & Apply Weights</Button>
-           </div>
+           <Button variant="secondary" onClick={() => setView(View.ADMIN_DASHBOARD)}><Icons.ArrowLeft /> Back to Dashboard</Button>
          </div>
          
-         <div className="flex flex-col lg:flex-row gap-8">
-           <Card className="flex-1 overflow-x-auto">
-             <table className="w-full min-w-[600px]">
-               <thead>
-                 <tr>
-                   <th className="p-2"></th>
-                   {criteria.map(c => (
-                     <th key={c.id} className="p-2 text-xs font-bold text-slate-500 uppercase w-24">{c.name}</th>
-                   ))}
-                 </tr>
-               </thead>
-               <tbody>
-                 {criteria.map((rowC, i) => (
-                   <tr key={rowC.id} className="border-b border-gray-50 last:border-none">
-                     <td className="p-3 font-medium text-slate-700 text-sm">{rowC.name}</td>
-                     {criteria.map((colC, j) => (
-                       <td key={`${rowC.id}-${colC.id}`} className="p-1 text-center">
-                         {i === j ? (
-                           <div className="w-full py-2 bg-gray-50 text-gray-400 rounded text-sm">1</div>
-                         ) : i < j ? (
-                           <select 
-                             className="w-full p-2 bg-white border border-gray-200 rounded text-sm focus:ring-2 focus:ring-primary outline-none"
-                             value={ahpMatrix[i][j]}
-                             onChange={(e) => handleMatrixChange(i, j, Number(e.target.value))}
-                           >
-                             <option value="1">1 - Equal</option>
-                             <option value="3">3 - Moderate</option>
-                             <option value="5">5 - Strong</option>
-                             <option value="7">7 - Very Strong</option>
-                             <option value="9">9 - Extreme</option>
-                             <option value="2">2</option>
-                             <option value="4">4</option>
-                             <option value="6">6</option>
-                             <option value="8">8</option>
-                             <option value="0.3333">1/3</option>
-                             <option value="0.2">1/5</option>
-                           </select>
-                         ) : (
-                           <div className="w-full py-2 bg-slate-50 text-slate-500 rounded text-sm">
-                             {ahpMatrix[i][j].toFixed(2)}
-                           </div>
-                         )}
-                       </td>
-                     ))}
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
-           </Card>
+         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+           {/* Main Matrix Section */}
+           <div className="lg:col-span-8 space-y-6">
+             <Card className="overflow-hidden border-0 shadow-md p-0">
+                <div className="bg-slate-800 p-4 text-white flex justify-between items-center">
+                   <h3 className="font-bold">Comparison Input</h3>
+                   <Button variant="outline" className="text-xs border-white text-white hover:bg-slate-700" onClick={() => {
+                     const n = criteria.length;
+                     setAhpMatrix(Array(n).fill(0).map(() => Array(n).fill(1)));
+                     setAhpResult(null);
+                   }}>Reset All to 1</Button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-xs border-b border-slate-200">
+                      <tr>
+                        <th className="p-4 min-w-[120px]">Criteria</th>
+                        {criteria.map(c => (
+                          <th key={c.id} className="p-4 text-center min-w-[100px] border-l border-slate-200" title={c.name}>
+                            {c.id}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {criteria.map((rowC, i) => (
+                        <tr key={rowC.id} className="hover:bg-blue-50 transition-colors odd:bg-white even:bg-slate-50/50">
+                          <td className="p-4 font-bold text-slate-700 border-r border-slate-200">
+                            <span className="text-primary mr-2">{rowC.id}</span>
+                            {rowC.name}
+                          </td>
+                          {criteria.map((colC, j) => (
+                            <td key={`${rowC.id}-${colC.id}`} className="p-2 border-l border-slate-200 text-center relative">
+                              {i === j ? (
+                                <div className="flex items-center justify-center">
+                                   <div className="w-12 py-1 bg-slate-200 text-slate-400 font-bold rounded text-xs text-center">1</div>
+                                </div>
+                              ) : i < j ? (
+                                <select 
+                                  className="w-full p-2 bg-white border border-blue-200 rounded text-xs focus:ring-2 focus:ring-primary focus:border-primary outline-none font-medium shadow-sm"
+                                  value={ahpMatrix[i][j]}
+                                  onChange={(e) => handleMatrixChange(i, j, Number(e.target.value))}
+                                >
+                                  <optgroup label="Row is More Important">
+                                    <option value="9">9 - Extreme</option>
+                                    <option value="8">8 - Intermediate</option>
+                                    <option value="7">7 - Very Strong</option>
+                                    <option value="6">6 - Intermediate</option>
+                                    <option value="5">5 - Strong</option>
+                                    <option value="4">4 - Intermediate</option>
+                                    <option value="3">3 - Moderate</option>
+                                    <option value="2">2 - Intermediate</option>
+                                  </optgroup>
+                                  <option value="1" className="font-bold">1 - Equal Importance</option>
+                                  <optgroup label="Column is More Important">
+                                    <option value="0.5">1/2 - Intermediate</option>
+                                    <option value="0.3333">1/3 - Moderate</option>
+                                    <option value="0.25">1/4 - Intermediate</option>
+                                    <option value="0.2">1/5 - Strong</option>
+                                    <option value="0.1667">1/6 - Intermediate</option>
+                                    <option value="0.1429">1/7 - Very Strong</option>
+                                    <option value="0.125">1/8 - Intermediate</option>
+                                    <option value="0.1111">1/9 - Extreme</option>
+                                  </optgroup>
+                                </select>
+                              ) : (
+                                <div className="flex items-center justify-center">
+                                   <div className="w-full py-1 bg-slate-100 text-slate-500 rounded text-xs text-center">
+                                      {ahpMatrix[i][j] < 1 ? `1/${Math.round(1/ahpMatrix[i][j])}` : ahpMatrix[i][j].toFixed(2)}
+                                   </div>
+                                </div>
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+             </Card>
+           </div>
            
-           {ahpResult && (
-             <div className="w-full lg:w-80 space-y-4">
-               <Card className={`${ahpResult.isConsistent ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                 <h3 className="font-bold text-slate-800 mb-2">Consistency Check</h3>
-                 <div className="flex justify-between mb-1 text-sm">
-                   <span>Ratio (CR):</span>
-                   <span className={ahpResult.isConsistent ? 'text-green-700 font-bold' : 'text-red-700 font-bold'}>
-                     {ahpResult.consistencyRatio.toFixed(4)}
-                   </span>
+           {/* Sidebar: Legend & Actions */}
+           <div className="lg:col-span-4 space-y-6">
+             <div className="sticky top-24">
+               <Card className="bg-gradient-to-br from-white to-slate-50 border-slate-200 mb-4">
+                 <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                   <Icons.Matrix /> Saaty Scale Legend
+                 </h3>
+                 <div className="space-y-2 text-sm">
+                    <div className="flex justify-between p-2 bg-white rounded border border-slate-100 shadow-sm">
+                      <span className="font-bold text-slate-700">1</span>
+                      <span className="text-slate-500">Equal Importance</span>
+                    </div>
+                    <div className="flex justify-between p-2 bg-white rounded border border-slate-100 shadow-sm">
+                      <span className="font-bold text-slate-700">3</span>
+                      <span className="text-slate-500">Moderate Importance</span>
+                    </div>
+                    <div className="flex justify-between p-2 bg-white rounded border border-slate-100 shadow-sm">
+                      <span className="font-bold text-slate-700">5</span>
+                      <span className="text-slate-500">Strong Importance</span>
+                    </div>
+                    <div className="flex justify-between p-2 bg-white rounded border border-slate-100 shadow-sm">
+                      <span className="font-bold text-slate-700">7</span>
+                      <span className="text-slate-500">Very Strong Importance</span>
+                    </div>
+                    <div className="flex justify-between p-2 bg-white rounded border border-slate-100 shadow-sm">
+                      <span className="font-bold text-slate-700">9</span>
+                      <span className="text-slate-500">Extreme Importance</span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 italic px-1">
+                      * Values 2, 4, 6, 8 represent intermediate judgments.
+                    </p>
                  </div>
-                 <p className="text-xs opacity-75">
-                   {ahpResult.isConsistent 
-                     ? "Matrix is consistent. Weights are reliable." 
-                     : "Matrix is inconsistent (CR > 0.1). Please review your judgments."}
-                 </p>
                </Card>
-               
-               <Card>
-                 <h3 className="font-bold text-slate-800 mb-4">Priority Weights</h3>
-                 <div className="space-y-3">
-                   {criteria.map(c => (
-                     <div key={c.id}>
-                       <div className="flex justify-between text-xs mb-1">
-                         <span>{c.name}</span>
-                         <span className="font-bold">{(ahpResult.weights[c.id] * 100).toFixed(1)}%</span>
+
+               <Card className="bg-white border-slate-200">
+                 <Button className="w-full mb-4 py-3 shadow-lg" onClick={calculateAhpWeights}>
+                   <Icons.Chart /> Calculate Weights
+                 </Button>
+
+                 {ahpResult && (
+                   <div className="animate-fade-in">
+                     <div className={`p-4 rounded-lg mb-4 border ${ahpResult.isConsistent ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                       <div className="flex justify-between items-center mb-1">
+                         <span className="text-xs font-bold uppercase opacity-70">Consistency Ratio (CR)</span>
+                         <span className={`text-lg font-bold ${ahpResult.isConsistent ? 'text-green-700' : 'text-red-700'}`}>
+                           {ahpResult.consistencyRatio.toFixed(4)}
+                         </span>
                        </div>
-                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                         <div 
-                           className="h-full bg-primary rounded-full" 
-                           style={{ width: `${ahpResult.weights[c.id] * 100}%` }} 
-                         />
-                       </div>
+                       <p className="text-xs">
+                         {ahpResult.isConsistent 
+                           ? <span className="text-green-700 flex items-center gap-1"><Icons.Check /> Consistent Matrix</span>
+                           : <span className="text-red-700 flex items-center gap-1">⚠️ Inconsistent (>0.1)</span>}
+                       </p>
                      </div>
-                   ))}
-                 </div>
-                 <Button className="w-full mt-6" onClick={() => setView(View.RESULTS)}>View Ranking Results</Button>
+                     
+                     <h3 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">Derived Weights</h3>
+                     <div className="space-y-3">
+                       {criteria.map(c => (
+                         <div key={c.id}>
+                           <div className="flex justify-between text-xs mb-1">
+                             <span className="font-medium text-slate-600">{c.name}</span>
+                             <span className="font-bold text-primary">{(ahpResult.weights[c.id] * 100).toFixed(1)}%</span>
+                           </div>
+                           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                             <div 
+                               className="h-full bg-primary rounded-full transition-all duration-500" 
+                               style={{ width: `${ahpResult.weights[c.id] * 100}%` }} 
+                             />
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                     <Button className="w-full mt-6" variant="secondary" onClick={() => setView(View.RESULTS)}>
+                        Apply & View Results
+                     </Button>
+                   </div>
+                 )}
                </Card>
              </div>
-           )}
+           </div>
          </div>
       </div>
     );
@@ -639,6 +918,9 @@ const App = () => {
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-slate-800">Top Recommended Universities</h2>
           <p className="text-secondary">Ranked based on your specific priorities and our 5-point scoring model.</p>
+          {userRole === UserRole.ADMIN && (
+             <span className="inline-block mt-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">Admin AHP Weights Active</span>
+          )}
         </div>
         
         <div className="flex justify-center gap-4 mb-6">
@@ -649,6 +931,9 @@ const App = () => {
            }}>
              <Icons.Sliders /> Adjust Priorities
            </Button>
+           {userRole === UserRole.ADMIN && (
+              <Button variant="outline" onClick={() => setView(View.ADMIN_DASHBOARD)}>Back to Dashboard</Button>
+           )}
         </div>
 
         <div className="space-y-6">
@@ -750,29 +1035,6 @@ const App = () => {
     </div>
   );
 
-  const AdminDashboard = () => (
-    <div>
-      <h2 className="text-2xl font-bold text-slate-800 mb-6">Admin Dashboard</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card onClick={() => setView(View.PAIRWISE_COMPARISON)} className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 hover:border-primary cursor-pointer group">
-           <div className="p-4 bg-blue-50 rounded-full mb-4 text-primary group-hover:bg-blue-100"><Icons.Matrix /></div>
-           <h3 className="font-bold">Expert AHP Analysis</h3>
-           <p className="text-xs text-secondary mt-2">Define precise criteria weights using the Pairwise Comparison Matrix.</p>
-        </Card>
-        <Card className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 hover:border-primary cursor-pointer">
-           <div className="p-4 bg-slate-50 rounded-full mb-4"><Icons.University /></div>
-           <h3 className="font-bold">Manage Universities</h3>
-           <p className="text-xs text-secondary mt-2">Add, Edit, Delete universities and update their data stats.</p>
-        </Card>
-        <Card className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 hover:border-primary cursor-pointer">
-           <div className="p-4 bg-slate-50 rounded-full mb-4"><Icons.User /></div>
-           <h3 className="font-bold">User Management</h3>
-           <p className="text-xs text-secondary mt-2">View registered students and usage logs.</p>
-        </Card>
-      </div>
-    </div>
-  );
-
   // --- Layout Wrapper ---
   const Layout = ({ children }: any) => (
     <div className="min-h-screen bg-background flex flex-col">
@@ -793,6 +1055,7 @@ const App = () => {
                 <>
                  <button onClick={() => setView(View.ADMIN_DASHBOARD)} className={`text-sm font-medium ${view === View.ADMIN_DASHBOARD ? 'text-primary' : 'text-slate-600'}`}>Admin Panel</button>
                  <button onClick={() => setView(View.PAIRWISE_COMPARISON)} className={`text-sm font-medium ${view === View.PAIRWISE_COMPARISON ? 'text-primary' : 'text-slate-600'}`}>AHP Matrix</button>
+                 <button onClick={() => setView(View.MANAGE_UNIVERSITIES)} className={`text-sm font-medium ${view === View.MANAGE_UNIVERSITIES ? 'text-primary' : 'text-slate-600'}`}>Data</button>
                 </>
              )}
              {userRole !== UserRole.GUEST && (
@@ -824,6 +1087,7 @@ const App = () => {
       {view === View.CRITERIA_LIST && <CriteriaList />}
       {view === View.STUDENT_PREFERENCES && <StudentPreferences />}
       {view === View.PAIRWISE_COMPARISON && <PairwiseComparison />}
+      {view === View.MANAGE_UNIVERSITIES && <ManageUniversities />}
       {view === View.RESULTS && <ResultsPage />}
       {view === View.ADMIN_DASHBOARD && <AdminDashboard />}
     </Layout>
