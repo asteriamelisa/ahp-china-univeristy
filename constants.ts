@@ -51,31 +51,45 @@ export const UNIVERSITIES: University[] = [
     id: 'A1',
     name: 'Universitas A1',
     city: 'Beijing',
-    description: 'A leading institution for engineering and computer science, located in the Haidian District of Beijing.',
+    description: 'A comprehensive research university in Beijing, ranked among the top in Asia and the world for Engineering and Computer Science.',
     logoUrl: '',
-    rankGlobal: 14, 
-    rankSubject: 5, 
-    tuition: 33000, 
-    cpiIndex: 85, 
+    rankGlobal: 17, 
+    rankSubject: 15, 
+    tuition: 39000, 
+    cpiIndex: 38, 
     englishPrograms: 8, 
-    intlStudentPercent: 12, 
+    intlStudentPercent: 4, 
     website: '#',
-    references: {}
+    references: {
+      'C1': 'https://www.topuniversities.com/',
+      'C2': 'https://www.humanresourcesonline.net/',
+      'C3': 'https://ac.cs.tsinghua.edu.cn/',
+      'C4': 'https://www.numbeo.com/',
+      'C5': 'https://www.mastersportal.com/',
+      'C6': 'https://www.tsinghua.edu.cn/'
+    }
   },
   {
     id: 'A2',
     name: 'Universitas A2',
     city: 'Beijing',
-    description: 'A major research university known for its humanities and science programs, with a picturesque campus.',
+    description: 'A major research university in Beijing known for its science programs and beautiful campus grounds.',
     logoUrl: '',
-    rankGlobal: 12, 
-    rankSubject: 18, 
-    tuition: 29000, 
-    cpiIndex: 85, 
+    rankGlobal: 14, 
+    rankSubject: 11, 
+    tuition: 50000, 
+    cpiIndex: 38, 
     englishPrograms: 6, 
-    intlStudentPercent: 16, 
+    intlStudentPercent: 15, 
     website: '#',
-    references: {}
+    references: {
+      'C1': 'https://www.topuniversities.com/',
+      'C2': 'https://www.numbeo.com/',
+      'C3': 'https://cs.pku.edu.cn/',
+      'C4': 'https://www.numbeo.com/',
+      'C5': 'https://cs.pku.edu.cn/',
+      'C6': 'https://www.topuniversities.com/'
+    }
   },
   {
     id: 'A3',
@@ -83,14 +97,20 @@ export const UNIVERSITIES: University[] = [
     city: 'Shanghai',
     description: 'This university in Shanghai is renowned for its liberal arts and international atmosphere.',
     logoUrl: '',
-    rankGlobal: 34, 
-    rankSubject: 45, 
-    tuition: 35000, 
-    cpiIndex: 80, 
-    englishPrograms: 15, 
-    intlStudentPercent: 20, 
+    rankGlobal: 30, 
+    rankSubject: 58, 
+    tuition: 28000, 
+    cpiIndex: 75, 
+    englishPrograms: 10, 
+    intlStudentPercent: 9, 
     website: '#',
-    references: {}
+    references: {
+      'C1': 'https://www.topuniversities.com/',
+      'C2': 'https://www.timeshighereducation.com/',
+      'C3': 'https://www.applyforchina.com/',
+      'C4': 'https://www.numbeo.com/',
+      'C5': 'https://www.fudan.edu.cn/en/'
+    }
   },
   {
     id: 'A4',
@@ -98,14 +118,19 @@ export const UNIVERSITIES: University[] = [
     city: 'Hangzhou',
     description: 'Located in the scenic city of Hangzhou, known for innovation and entrepreneurship.',
     logoUrl: '',
-    rankGlobal: 42, 
-    rankSubject: 25, 
-    tuition: 28000, 
-    cpiIndex: 60, 
-    englishPrograms: 4, 
-    intlStudentPercent: 15, 
+    rankGlobal: 49, 
+    rankSubject: 32, 
+    tuition: 22800, 
+    cpiIndex: 34.19, 
+    englishPrograms: 10, 
+    intlStudentPercent: 5, 
     website: '#',
-    references: {}
+    references: {
+      'C1': 'https://www.topuniversities.com/',
+      'C2': 'https://www.timeshighereducation.com/',
+      'C3': 'https://www.elumv.com/',
+      'C4': 'https://www.numbeo.com/'
+    }
   },
   {
     id: 'A5',
@@ -113,14 +138,19 @@ export const UNIVERSITIES: University[] = [
     city: 'Shanghai',
     description: 'Famous for its engineering focus and rich history, located in the dynamic city of Shanghai.',
     logoUrl: '',
-    rankGlobal: 46, 
-    rankSubject: 28, 
-    tuition: 32000, 
-    cpiIndex: 80, 
-    englishPrograms: 5, 
+    rankGlobal: 47, 
+    rankSubject: 33, 
+    tuition: 28900, 
+    cpiIndex: 75, 
+    englishPrograms: 10, 
     intlStudentPercent: 11, 
     website: '#',
-    references: {}
+    references: {
+      'C1': 'https://www.topuniversities.com/',
+      'C2': 'https://www.timeshighereducation.com/',
+      'C3': 'https://ji.sjtu.edu.cn/',
+      'C6': 'https://www.timeshighereducation.com/'
+    }
   },
   {
     id: 'A6',
@@ -128,14 +158,19 @@ export const UNIVERSITIES: University[] = [
     city: 'Hefei',
     description: 'A national research university in Hefei, focused heavily on science and technology.',
     logoUrl: '',
-    rankGlobal: 94, 
-    rankSubject: 55, 
-    tuition: 20000, 
+    rankGlobal: 51, 
+    rankSubject: 52, 
+    tuition: 30000, 
     cpiIndex: 40, 
-    englishPrograms: 2, 
+    englishPrograms: 10, 
     intlStudentPercent: 5, 
     website: '#',
-    references: {}
+    references: {
+      'C1': 'https://www.timeshighereducation.com/',
+      'C2': 'https://www.timeshighereducation.com/',
+      'C3': 'https://en.ustc.edu.cn/',
+      'C6': 'https://www.timeshighereducation.com/'
+    }
   },
   {
     id: 'A7',
@@ -143,14 +178,19 @@ export const UNIVERSITIES: University[] = [
     city: 'Nanjing',
     description: 'One of the oldest and most prestigious universities in China, located in the ancient capital.',
     logoUrl: '',
-    rankGlobal: 130, 
-    rankSubject: 80, 
-    tuition: 24000, 
+    rankGlobal: 103, 
+    rankSubject: 66, 
+    tuition: 28000, 
     cpiIndex: 50, 
-    englishPrograms: 3, 
-    intlStudentPercent: 8, 
+    englishPrograms: 5, 
+    intlStudentPercent: 10, 
     website: '#',
-    references: {}
+    references: {
+      'C1': 'https://www.topuniversities.com/',
+      'C2': 'https://www.timeshighereducation.com/',
+      'C3': 'https://hwxy.nju.edu.cn/',
+      'C6': 'https://www.timeshighereducation.com/'
+    }
   },
   {
     id: 'A8',
@@ -158,14 +198,19 @@ export const UNIVERSITIES: University[] = [
     city: 'Guangzhou',
     description: 'A preeminent research, academic and cultural center and the premier location for talent development in South China.',
     logoUrl: '',
-    rankGlobal: 150, 
-    rankSubject: 95, 
-    tuition: 30000, 
-    cpiIndex: 75, 
-    englishPrograms: 4, 
-    intlStudentPercent: 9, 
+    rankGlobal: 318, 
+    rankSubject: 225, 
+    tuition: 27000, 
+    cpiIndex: 42, 
+    englishPrograms: 5, 
+    intlStudentPercent: 5, 
     website: '#',
-    references: {}
+    references: {
+      'C1': 'https://www.topuniversities.com/',
+      'C2': 'https://www.timeshighereducation.com/',
+      'C3': 'https://iso.sysu.edu.cn/en/node/1473',
+      'C4': 'https://www.numbeo.com/'
+    }
   },
   {
     id: 'A9',
@@ -173,14 +218,19 @@ export const UNIVERSITIES: University[] = [
     city: 'Wuhan',
     description: 'Known for having one of the most beautiful campuses in China, especially during cherry blossom season.',
     logoUrl: '',
-    rankGlobal: 190, 
-    rankSubject: 90, 
-    tuition: 26000, 
-    cpiIndex: 48, 
-    englishPrograms: 4, 
-    intlStudentPercent: 9, 
+    rankGlobal: 194, 
+    rankSubject: 138, 
+    tuition: 26500, 
+    cpiIndex: 41, 
+    englishPrograms: 5, 
+    intlStudentPercent: 6, 
     website: '#',
-    references: {}
+    references: {
+      'C1': 'https://www.topuniversities.com/',
+      'C2': 'https://www.timeshighereducation.com/',
+      'C3': 'http://admission.whu.edu.cn/',
+      'C6': 'https://www.timeshighereducation.com/'
+    }
   },
   {
     id: 'A10',
@@ -188,14 +238,19 @@ export const UNIVERSITIES: University[] = [
     city: 'Wuhan',
     description: 'A leading research university known for STEM and high quality education standards.',
     logoUrl: '',
-    rankGlobal: 170, 
-    rankSubject: 70, 
-    tuition: 28000, 
-    cpiIndex: 48, 
-    englishPrograms: 3, 
-    intlStudentPercent: 7, 
+    rankGlobal: 308, 
+    rankSubject: 76, 
+    tuition: 28500, 
+    cpiIndex: 41, 
+    englishPrograms: 5, 
+    intlStudentPercent: 5, 
     website: '#',
-    references: {}
+    references: {
+      'C1': 'https://www.topuniversities.com/',
+      'C2': 'https://www.timeshighereducation.com/',
+      'C3': 'https://iso.hust.edu.cn/',
+      'C6': 'https://www.timeshighereducation.com/'
+    }
   },
 ];
 

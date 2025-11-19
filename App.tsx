@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { UserRole, University, Criterion, AhpResult, UniversityScore } from './types';
 import { CRITERIA, UNIVERSITIES } from './constants';
@@ -6,23 +5,23 @@ import { calculateAhp, getCriterionScore } from './services/ahpService';
 
 // --- Icons ---
 const Icons = {
-  University: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>,
-  Chart: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>,
-  List: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
-  Matrix: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>,
-  User: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-  LogOut: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
-  Check: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-  Image: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
-  ArrowLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
-  Sliders: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>,
-  Edit: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-  Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
-  Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
-  Alert: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
-  Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
-  Link: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
-  ExternalLink: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  University: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>,
+  Chart: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>,
+  List: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+  Matrix: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>,
+  User: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  LogOut: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  Check: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="20 6 9 17 4 12"/></svg>,
+  Image: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  ArrowLeft: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  Sliders: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>,
+  Edit: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  Save: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+  Trash: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+  Alert: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+  Refresh: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+  Link: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+  ExternalLink: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
 };
 
 // --- Types & Enums ---
@@ -91,9 +90,24 @@ const App = () => {
   
   // Initialize Matrix
   useEffect(() => {
-    const n = criteria.length;
-    const initialMatrix = Array(n).fill(0).map(() => Array(n).fill(1));
-    setAhpMatrix(initialMatrix);
+    // PREDEFINED MATRIX AS REQUESTED
+    // C1: Global, C2: Subject, C3: Tuition, C4: Living, C5: English, C6: Intl
+    const initialMatrix = [
+      [1,      3,      5,      6,      6,      6],
+      [0.3333, 1,      3,      4,      4,      4],
+      [0.2,    0.3333, 1,      3,      3,      3],
+      [0.1667, 0.25,   0.3333, 1,      1,      1],
+      [0.1667, 0.25,   0.3333, 1,      1,      1],
+      [0.1667, 0.25,   0.3333, 1,      1,      1]
+    ];
+    
+    // Safety check for dimensions, otherwise default
+    if (initialMatrix.length === criteria.length) {
+       setAhpMatrix(initialMatrix);
+    } else {
+       const n = criteria.length;
+       setAhpMatrix(Array(n).fill(0).map(() => Array(n).fill(1)));
+    }
   }, [criteria]);
 
   const handleLogin = (role: UserRole) => {
@@ -379,39 +393,69 @@ const App = () => {
   };
 
   const UniversityList = () => (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800">Universities</h2>
-        <div className="text-sm text-secondary">{universities.length} Institutions</div>
+        <div>
+            <h2 className="text-2xl font-bold text-slate-800">Explore Universities</h2>
+            <p className="text-slate-500 text-sm">Compare key metrics managed by our data team.</p>
+        </div>
+        <div className="text-sm font-medium bg-blue-50 text-blue-700 px-3 py-1 rounded-full">{universities.length} Institutions</div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {universities.map(uni => (
-          <Card key={uni.id} className="flex flex-col h-full hover:-translate-y-1 transition-transform p-6">
-            <div className="flex items-start justify-between mb-4">
-               <div className="flex items-center gap-4">
-                 <div>
-                    <h3 className="text-xl font-bold text-slate-800">{uni.name}</h3>
-                    <p className="text-sm text-blue-600 font-medium flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block"></span>
-                      {uni.city}
-                    </p>
-                 </div>
-               </div>
+          <Card key={uni.id} className="flex flex-col h-full hover:shadow-lg transition-all duration-300 p-0 overflow-hidden border border-slate-200 group">
+            {/* Header */}
+            <div className="p-6 pb-4 bg-white relative">
+                <div className="flex justify-between items-start mb-3">
+                   <div>
+                      <h3 className="text-xl font-bold text-slate-800 group-hover:text-primary transition-colors">{uni.name}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500">{uni.id}</span>
+                          <p className="text-sm text-slate-500 font-medium flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block"></span>
+                            {uni.city}
+                          </p>
+                      </div>
+                   </div>
+                </div>
+                <p className="text-slate-600 text-sm leading-relaxed line-clamp-2 mb-2">{uni.description}</p>
             </div>
             
-            <div className="flex-1 mb-6">
-              <p className="text-slate-600 leading-relaxed">{uni.description}</p>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 mb-6">
-                <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded border border-slate-200">Global Rank #{uni.rankGlobal}</span>
-                <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded border border-slate-200">Tuition ¥{uni.tuition.toLocaleString()}</span>
-                <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded border border-slate-200">Eng. Programs: {uni.englishPrograms}</span>
+            {/* Data Grid - Matches Admin Data Columns */}
+            <div className="bg-slate-50 border-y border-slate-100 p-4 grid grid-cols-3 gap-y-4 gap-x-2 text-sm">
+                <div className="text-center border-r border-slate-200 last:border-0">
+                    <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-1">Global Rank</div>
+                    <div className="font-bold text-slate-700">#{uni.rankGlobal}</div>
+                </div>
+                <div className="text-center border-r border-slate-200 last:border-0">
+                    <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-1">Subj. Rank</div>
+                    <div className="font-bold text-slate-700">#{uni.rankSubject}</div>
+                </div>
+                <div className="text-center">
+                    <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-1">Tuition</div>
+                    <div className="font-bold text-slate-700">¥{uni.tuition.toLocaleString()}</div>
+                </div>
+                <div className="text-center border-r border-slate-200 last:border-0">
+                    <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-1">Living Cost</div>
+                    <div className="font-bold text-slate-700">CPI {uni.cpiIndex}</div>
+                </div>
+                <div className="text-center border-r border-slate-200 last:border-0">
+                    <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-1">Eng. Prog</div>
+                    <div className="font-bold text-slate-700">{uni.englishPrograms}</div>
+                </div>
+                <div className="text-center">
+                    <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-1">Intl. Students</div>
+                    <div className="font-bold text-slate-700">{uni.intlStudentPercent}%</div>
+                </div>
             </div>
 
-            <Button variant="outline" className="w-full justify-center mt-auto" onClick={() => { setSelectedUniId(uni.id); setView(View.UNIVERSITY_DETAIL); }}>
-              View Details
-            </Button>
+            {/* Footer Actions */}
+            <div className="p-4 mt-auto bg-white">
+                <Button variant="outline" className="w-full justify-center group-hover:border-primary group-hover:text-primary transition-colors" onClick={() => { setSelectedUniId(uni.id); setView(View.UNIVERSITY_DETAIL); }}>
+                  View Full Details <Icons.ArrowLeft className="rotate-180 w-4 h-4 ml-1" />
+                </Button>
+            </div>
           </Card>
         ))}
       </div>
@@ -762,10 +806,18 @@ const App = () => {
                         <Icons.Refresh /> Recalculate
                       </Button>
                       <Button variant="outline" className="text-xs border-white text-white hover:bg-slate-700" onClick={() => {
-                        const n = criteria.length;
-                        setAhpMatrix(Array(n).fill(0).map(() => Array(n).fill(1)));
+                        // Reset to the predefined matrix as requested to ensure it's stable
+                         const defaultMatrix = [
+                          [1,      3,      5,      6,      6,      6],
+                          [0.3333, 1,      3,      4,      4,      4],
+                          [0.2,    0.3333, 1,      3,      3,      3],
+                          [0.1667, 0.25,   0.3333, 1,      1,      1],
+                          [0.1667, 0.25,   0.3333, 1,      1,      1],
+                          [0.1667, 0.25,   0.3333, 1,      1,      1]
+                        ];
+                        setAhpMatrix(defaultMatrix);
                         setAhpResult(null);
-                      }}>Reset</Button>
+                      }}>Reset Default</Button>
                    </div>
                 </div>
                 <div className="overflow-x-auto">
