@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { UserRole, University, Criterion, AhpResult } from './types';
+import { UserRole, University, Criterion, AhpResult, UniversityScore } from './types';
 import { CRITERIA, UNIVERSITIES } from './constants';
-import { calculateAhp, normalizeData } from './services/ahpService';
-import { generateCampusImage } from './services/geminiService';
+import { calculateAhp, getCriterionScore } from './services/ahpService';
 
 // --- Icons ---
 const Icons = {
@@ -15,6 +15,7 @@ const Icons = {
   Check: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
   Image: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
   ArrowLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  Sliders: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
 };
 
 // --- Types & Enums ---
@@ -25,7 +26,8 @@ enum View {
   UNIVERSITY_LIST,
   UNIVERSITY_DETAIL,
   CRITERIA_LIST,
-  PAIRWISE_COMPARISON,
+  STUDENT_PREFERENCES, // New simple rating view
+  PAIRWISE_COMPARISON, // Admin only AHP
   RESULTS,
   ADMIN_DASHBOARD
 }
@@ -37,7 +39,8 @@ const Button = ({ onClick, children, variant = 'primary', className = '', disabl
   const variants = {
     primary: "bg-primary text-white hover:bg-blue-700 shadow-md hover:shadow-lg",
     secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200",
-    outline: "border-2 border-primary text-primary hover:bg-blue-50"
+    outline: "border-2 border-primary text-primary hover:bg-blue-50",
+    danger: "bg-red-50 text-red-600 hover:bg-red-100"
   };
   return (
     <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant as keyof typeof variants]} ${className}`}>
@@ -46,8 +49,8 @@ const Button = ({ onClick, children, variant = 'primary', className = '', disabl
   );
 };
 
-const Card = ({ children, className = '' }: any) => (
-  <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow ${className}`}>
+const Card = ({ children, className = '', onClick }: any) => (
+  <div onClick={onClick} className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow ${className}`}>
     {children}
   </div>
 );
@@ -63,14 +66,20 @@ const App = () => {
   const [criteria, setCriteria] = useState<Criterion[]>(CRITERIA);
   const [selectedUniId, setSelectedUniId] = useState<string | null>(null);
   
-  // AHP State
+  // AHP State (For Admin)
   const [ahpMatrix, setAhpMatrix] = useState<number[][]>([]);
   const [ahpResult, setAhpResult] = useState<AhpResult | null>(null);
-  
-  // Image Gen State
-  const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
-  const [generatingImageFor, setGeneratingImageFor] = useState<string | null>(null);
 
+  // Simple Student Preferences State
+  const [studentRatings, setStudentRatings] = useState<Record<string, number>>(() => {
+    const initial: Record<string, number> = {};
+    CRITERIA.forEach(c => initial[c.id] = 3); // Default Moderate
+    return initial;
+  });
+
+  // Final Active Weights (from either AHP or Simple Ratings)
+  const [activeWeights, setActiveWeights] = useState<Record<string, number> | null>(null);
+  
   // Initialize Matrix
   useEffect(() => {
     const n = criteria.length;
@@ -90,9 +99,10 @@ const App = () => {
   const handleLogout = () => {
     setUserRole(UserRole.GUEST);
     setView(View.LANDING);
+    setActiveWeights(null);
   };
 
-  // --- AHP Logic ---
+  // --- AHP Logic (Admin) ---
   const handleMatrixChange = (row: number, col: number, value: number) => {
     const newMatrix = ahpMatrix.map(r => [...r]);
     newMatrix[row][col] = value;
@@ -103,15 +113,25 @@ const App = () => {
   const calculateAhpWeights = () => {
     const result = calculateAhp(ahpMatrix, criteria.map(c => c.id));
     setAhpResult(result);
+    setActiveWeights(result.weights); // Set active weights for results
+    setView(View.RESULTS);
   };
 
-  // --- Image Generation ---
-  const handleGenerateImage = async (uni: University) => {
-    setGeneratingImageFor(uni.id);
-    const prompt = `Photorealistic, wide-angle architectural shot of ${uni.name} campus in ${uni.city}, China. ${uni.description}. Academic, modern, sunny day, high quality, detailed, 4k.`;
-    const imageUrl = await generateCampusImage(prompt);
-    setGeneratedImages(prev => ({ ...prev, [uni.id]: imageUrl }));
-    setGeneratingImageFor(null);
+  // --- Simple Preference Logic (Student) ---
+  const handleRatingChange = (id: string, rating: number) => {
+    setStudentRatings(prev => ({ ...prev, [id]: rating }));
+  };
+
+  const calculateSimpleWeights = () => {
+    const totalScore = Object.values(studentRatings).reduce((a, b) => a + b, 0);
+    const weights: Record<string, number> = {};
+    
+    Object.entries(studentRatings).forEach(([id, rating]) => {
+      weights[id] = rating / totalScore;
+    });
+
+    setActiveWeights(weights);
+    setView(View.RESULTS);
   };
 
   // --- Views ---
@@ -124,12 +144,12 @@ const App = () => {
         </div>
         <Button variant="primary" onClick={() => setView(View.LOGIN)}>Login</Button>
       </header>
-      <main className="flex-1 flex flex-col items-center justify-center text-center p-8 max-w-4xl mx-auto">
+      <main className="flex-1 flex flex-col items-center justify-center text-center p-8 max-w-4xl mx-auto relative z-10">
         <h1 className="text-5xl font-bold text-slate-800 mb-6">
           Master's Degree Selection Decision Support System
         </h1>
         <p className="text-xl text-secondary mb-10 max-w-2xl">
-          Empowering students to choose the best university in China using the Analytic Hierarchy Process (AHP) and AI-driven insights.
+          Empowering students to choose the best university in China using intelligent decision analysis.
         </p>
         <div className="flex gap-4">
           <Button onClick={() => setView(View.LOGIN)}>Get Started</Button>
@@ -138,8 +158,7 @@ const App = () => {
             setView(View.UNIVERSITY_LIST);
           }}>Explore Universities</Button>
         </div>
-        <div className="mt-20 opacity-20 absolute bottom-0 pointer-events-none">
-           {/* Decorative background element */}
+        <div className="mt-20 opacity-20 absolute bottom-0 pointer-events-none -z-10">
            <svg width="800" height="400" viewBox="0 0 800 400">
              <path d="M0,300 Q400,400 800,300" stroke="#2E67F8" strokeWidth="2" fill="none"/>
              <path d="M0,320 Q400,420 800,320" stroke="#2E67F8" strokeWidth="2" fill="none" opacity="0.5"/>
@@ -160,7 +179,7 @@ const App = () => {
             </div>
             <div className="text-left">
               <div className="font-semibold text-slate-800">Student / Decision Maker</div>
-              <div className="text-sm text-slate-500">Find your ideal university</div>
+              <div className="text-sm text-slate-500">Customize preferences & find universities</div>
             </div>
           </button>
           <button onClick={() => handleLogin(UserRole.ADMIN)} className="w-full p-4 border-2 border-gray-100 rounded-xl hover:border-primary hover:bg-blue-50 transition-all flex items-center gap-4 group">
@@ -169,7 +188,7 @@ const App = () => {
             </div>
             <div className="text-left">
               <div className="font-semibold text-slate-800">Administrator</div>
-              <div className="text-sm text-slate-500">Manage data and criteria</div>
+              <div className="text-sm text-slate-500">Manage data & perform AHP analysis</div>
             </div>
           </button>
         </div>
@@ -188,13 +207,13 @@ const App = () => {
       </Card>
       
       <div className="space-y-4">
-        <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => setView(View.PAIRWISE_COMPARISON)}>
+        <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => setView(View.STUDENT_PREFERENCES)}>
           <div className="flex items-start justify-between mb-4">
-            <div className="p-3 bg-blue-50 rounded-lg text-primary"><Icons.Matrix /></div>
+            <div className="p-3 bg-blue-50 rounded-lg text-primary"><Icons.Sliders /></div>
             <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">STEP 1</span>
           </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-2">Pairwise Comparison</h3>
-          <p className="text-secondary text-sm">Define your priorities using the AHP matrix to weigh criteria like Rank vs. Cost.</p>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">Customize Preferences</h3>
+          <p className="text-secondary text-sm">Set your targets (e.g. "Tuition below 40k") to get personalized recommendations.</p>
         </Card>
         
         <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => setView(View.UNIVERSITY_LIST)}>
@@ -203,30 +222,173 @@ const App = () => {
             <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">EXPLORE</span>
           </div>
           <h3 className="text-xl font-bold text-slate-800 mb-2">Browse Universities</h3>
-          <p className="text-secondary text-sm">Explore top Chinese universities, view details, and visualize campuses with AI.</p>
+          <p className="text-secondary text-sm">Explore top Chinese universities and view detailed statistics.</p>
         </Card>
       </div>
 
       <div className="space-y-4">
-        <Card className={`cursor-pointer hover:border-primary transition-colors ${!ahpResult ? 'opacity-60' : ''}`} onClick={() => ahpResult && setView(View.RESULTS)}>
+        <Card className={`cursor-pointer hover:border-primary transition-colors ${!activeWeights ? 'opacity-60' : ''}`} onClick={() => activeWeights && setView(View.RESULTS)}>
            <div className="flex items-start justify-between mb-4">
             <div className="p-3 bg-blue-50 rounded-lg text-primary"><Icons.Chart /></div>
             <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">STEP 2</span>
           </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-2">View Rankings</h3>
-          <p className="text-secondary text-sm">See which university matches your preferences based on your AHP weights.</p>
-          {!ahpResult && <div className="mt-2 text-xs text-orange-500 font-medium">Complete Comparison first</div>}
+          <h3 className="text-xl font-bold text-slate-800 mb-2">View My Rankings</h3>
+          <p className="text-secondary text-sm">See which university matches your preferences based on your ratings.</p>
+          {!activeWeights && <div className="mt-2 text-xs text-orange-500 font-medium">Set preferences first</div>}
         </Card>
          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => setView(View.CRITERIA_LIST)}>
            <div className="flex items-start justify-between mb-4">
             <div className="p-3 bg-blue-50 rounded-lg text-primary"><Icons.Check /></div>
           </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-2">View Criteria</h3>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">Criteria Info</h3>
           <p className="text-secondary text-sm">Understand the factors: Global Rank, Tuition, CPI, etc.</p>
         </Card>
       </div>
     </div>
   );
+
+  // --- New Student Preferences View ---
+  const StudentPreferences = () => {
+    // Specific labels for each criterion to guide the student
+    // Value 1 = Low Priority/Lenient. Value 5 = High Priority/Strict.
+    const criterionOptions: Record<string, { val: number, label: string }[]> = {
+      'C1': [ // Global Rank (Cost)
+        { val: 1, label: "> 200" },
+        { val: 2, label: "101 - 200" },
+        { val: 3, label: "51 - 100" },
+        { val: 4, label: "11 - 50" },
+        { val: 5, label: "Top 10" }
+      ],
+      'C2': [ // Subject Rank (Cost)
+        { val: 1, label: "> 200" },
+        { val: 2, label: "101 - 200" },
+        { val: 3, label: "51 - 100" },
+        { val: 4, label: "21 - 50" },
+        { val: 5, label: "Top 20" }
+      ],
+      'C3': [ // Tuition (Cost)
+        { val: 1, label: "≥ 80k" },
+        { val: 2, label: "60k - 79k" },
+        { val: 3, label: "40k - 59k" },
+        { val: 4, label: "25k - 39k" },
+        { val: 5, label: "< 25k" }
+      ],
+      'C4': [ // CPI (Cost)
+        { val: 1, label: "≥ 75" },
+        { val: 2, label: "65 - 74" },
+        { val: 3, label: "55 - 64" },
+        { val: 4, label: "45 - 54" },
+        { val: 5, label: "< 45" }
+      ],
+      'C5': [ // English Programs (Benefit)
+        { val: 1, label: "1" },
+        { val: 2, label: "2" },
+        { val: 3, label: "3" },
+        { val: 4, label: "4" },
+        { val: 5, label: "5+" }
+      ],
+      'C6': [ // Intl Students (Benefit)
+        { val: 1, label: "< 10%" },
+        { val: 2, label: "10 - 14%" },
+        { val: 3, label: "15 - 19%" },
+        { val: 4, label: "20 - 24%" },
+        { val: 5, label: "≥ 25%" }
+      ]
+    };
+
+    // Calculate preview weights for visualization
+    const total = Object.values(studentRatings).reduce((a, b) => a + b, 0);
+    
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8 text-center">
+           <h2 className="text-3xl font-bold text-slate-800 mb-2">Set Your Target Preferences</h2>
+           <p className="text-secondary max-w-2xl mx-auto">
+             Select the specific range you are looking for. 
+             <br/>
+             Selecting a <strong>stricter target</strong> (e.g., "Top 10", "Cheap Tuition") tells the system that this factor is <strong>Highly Important</strong>.
+           </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2 space-y-8">
+            {criteria.map(c => {
+              const options = criterionOptions[c.id] || [
+                 { val: 1, label: "Not Important" }, { val: 5, label: "Very Important" }
+              ];
+
+              return (
+                <div key={c.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                  <div className="mb-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <h3 className="text-lg font-bold text-slate-800">{c.name}</h3>
+                      <span className={`text-xs font-semibold px-2 py-1 rounded uppercase ${c.type === 'benefit' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                        {c.type}
+                      </span>
+                    </div>
+                    <p className="text-sm text-secondary">{c.description}</p>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-xs text-gray-400 font-medium mb-2 px-1">
+                     <span>Low Priority / Lenient</span>
+                     <span>High Priority / Strict</span>
+                  </div>
+
+                  <div className="grid grid-cols-5 gap-1">
+                    {options.map((opt) => (
+                      <button
+                        key={opt.val}
+                        onClick={() => handleRatingChange(c.id, opt.val)}
+                        className={`py-3 px-1 rounded-lg text-xs md:text-sm font-medium transition-all h-full flex items-center justify-center text-center leading-tight break-words
+                          ${studentRatings[c.id] === opt.val 
+                            ? 'bg-primary text-white shadow-md ring-2 ring-offset-1 ring-primary' 
+                            : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-100'}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="md:col-span-1">
+            <div className="sticky top-24 space-y-4">
+              <Card className="bg-blue-50 border-blue-100">
+                <h3 className="font-bold text-slate-800 mb-4">Your Priorities</h3>
+                <div className="space-y-3">
+                   {criteria.map(c => {
+                     const weight = studentRatings[c.id] / total;
+                     const currentVal = studentRatings[c.id];
+                     const currentLabel = criterionOptions[c.id]?.find(o => o.val === currentVal)?.label;
+
+                     return (
+                       <div key={c.id}>
+                         <div className="flex justify-between text-xs mb-1 text-slate-700">
+                           <span>{c.name}</span>
+                           <span className="font-bold text-blue-600">{currentLabel}</span>
+                         </div>
+                         <div className="h-2 bg-white rounded-full overflow-hidden border border-blue-100">
+                           <div 
+                             className="h-full bg-primary rounded-full transition-all duration-300" 
+                             style={{ width: `${weight * 100}%` }} 
+                           />
+                         </div>
+                       </div>
+                     );
+                   })}
+                </div>
+                <Button className="w-full mt-6" onClick={calculateSimpleWeights}>
+                   <Icons.Chart /> Calculate Rankings
+                </Button>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const UniversityList = () => (
     <div className="space-y-6">
@@ -234,25 +396,32 @@ const App = () => {
         <h2 className="text-2xl font-bold text-slate-800">Universities</h2>
         <div className="text-sm text-secondary">{universities.length} Institutions</div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {universities.map(uni => (
-          <Card key={uni.id} className="flex flex-col h-full hover:-translate-y-1 transition-transform">
-            <div className="h-32 bg-gray-100 rounded-t-xl mb-4 overflow-hidden relative">
-               {/* Placeholder for card header image if we had one, defaulting to pattern */}
-               <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-slate-200 opacity-50" />
-               <div className="absolute bottom-0 left-4 transform translate-y-1/2 bg-white p-2 rounded-lg shadow-md border border-gray-100">
-                  <img src={uni.logoUrl} alt={uni.name} className="w-12 h-12 rounded bg-gray-50 object-cover" />
+          <Card key={uni.id} className="flex flex-col h-full hover:-translate-y-1 transition-transform p-6">
+            <div className="flex items-start justify-between mb-4">
+               <div className="flex items-center gap-4">
+                 {/* Image removed as requested */}
+                 <div>
+                    <h3 className="text-xl font-bold text-slate-800">{uni.name}</h3>
+                    <p className="text-sm text-blue-600 font-medium flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block"></span>
+                      {uni.city}
+                    </p>
+                 </div>
                </div>
             </div>
-            <div className="mt-6 flex-1">
-              <h3 className="text-lg font-bold text-slate-800 mb-1">{uni.name}</h3>
-              <p className="text-sm text-blue-600 font-medium mb-2">{uni.city}</p>
-              <p className="text-sm text-secondary line-clamp-2 mb-4">{uni.description}</p>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">Global Rank #{uni.rankGlobal}</span>
-                <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">Subject Rank #{uni.rankSubject}</span>
-              </div>
+            
+            <div className="flex-1 mb-6">
+              <p className="text-slate-600 leading-relaxed">{uni.description}</p>
             </div>
+            
+            <div className="flex flex-wrap gap-2 mb-6">
+                <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded border border-slate-200">Global Rank #{uni.rankGlobal}</span>
+                <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded border border-slate-200">Tuition ¥{uni.tuition.toLocaleString()}</span>
+                <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded border border-slate-200">Eng. Programs: {uni.englishPrograms}</span>
+            </div>
+
             <Button variant="outline" className="w-full justify-center mt-auto" onClick={() => { setSelectedUniId(uni.id); setView(View.UNIVERSITY_DETAIL); }}>
               View Details
             </Button>
@@ -266,89 +435,49 @@ const App = () => {
     const uni = universities.find(u => u.id === selectedUniId);
     if (!uni) return <div>Not found</div>;
 
-    const hasGeneratedImage = generatedImages[uni.id];
-    const isGenerating = generatingImageFor === uni.id;
-
     return (
       <div className="max-w-4xl mx-auto">
          <Button variant="secondary" className="mb-6" onClick={() => setView(View.UNIVERSITY_LIST)}>
            <Icons.ArrowLeft /> Back to List
          </Button>
          
-         <Card className="overflow-hidden p-0 mb-8">
-           <div className="relative h-64 md:h-80 bg-slate-100 group">
-             {hasGeneratedImage ? (
-               <img src={hasGeneratedImage} alt={uni.name + " Campus"} className="w-full h-full object-cover" />
-             ) : (
-               <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 flex-col gap-2">
-                 <Icons.Image />
-                 <span>No AI visualization yet</span>
-               </div>
-             )}
-             
-             <div className="absolute bottom-4 right-4">
-               <Button 
-                 variant="primary" 
-                 onClick={() => handleGenerateImage(uni)}
-                 disabled={isGenerating}
-                 className="shadow-lg"
-               >
-                 {isGenerating ? (
-                   <>
-                     <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                     </svg>
-                     Designing Campus...
-                   </>
-                 ) : (
-                   <>
-                     <Icons.Image /> {hasGeneratedImage ? 'Regenerate View' : 'Visualize Campus with AI'}
-                   </>
-                 )}
-               </Button>
+         <Card className="p-8">
+           <div className="flex items-start justify-between mb-6">
+             <div>
+               <h1 className="text-3xl font-bold text-slate-800 mb-2">{uni.name}</h1>
+               <p className="text-xl text-blue-600 flex items-center gap-2">
+                 <span className="inline-block w-2 h-2 rounded-full bg-blue-600"></span> {uni.city}, China
+               </p>
              </div>
            </div>
            
-           <div className="p-8">
-             <div className="flex items-start justify-between mb-6">
-               <div>
-                 <h1 className="text-3xl font-bold text-slate-800 mb-2">{uni.name}</h1>
-                 <p className="text-xl text-blue-600 flex items-center gap-2">
-                   <span className="inline-block w-2 h-2 rounded-full bg-blue-600"></span> {uni.city}, China
-                 </p>
-               </div>
-               <img src={uni.logoUrl} alt="Logo" className="w-20 h-20 rounded-lg border border-gray-100" />
+           <p className="text-slate-600 leading-relaxed mb-8 text-lg">{uni.description}</p>
+           
+           <h3 className="font-bold text-lg mb-4 border-b pb-2">Key Metrics</h3>
+           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+             <div className="p-4 bg-slate-50 rounded-lg">
+               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Global Rank</div>
+               <div className="text-2xl font-bold text-slate-800">#{uni.rankGlobal}</div>
              </div>
-             
-             <p className="text-slate-600 leading-relaxed mb-8 text-lg">{uni.description}</p>
-             
-             <h3 className="font-bold text-lg mb-4 border-b pb-2">Key Metrics</h3>
-             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-               <div className="p-4 bg-slate-50 rounded-lg">
-                 <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Global Rank</div>
-                 <div className="text-2xl font-bold text-slate-800">#{uni.rankGlobal}</div>
-               </div>
-               <div className="p-4 bg-slate-50 rounded-lg">
-                 <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Subject Rank</div>
-                 <div className="text-2xl font-bold text-slate-800">#{uni.rankSubject}</div>
-               </div>
-               <div className="p-4 bg-slate-50 rounded-lg">
-                 <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Tuition (Year)</div>
-                 <div className="text-2xl font-bold text-slate-800">¥{uni.tuition.toLocaleString()}</div>
-               </div>
-               <div className="p-4 bg-slate-50 rounded-lg">
-                 <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">CPI Index</div>
-                 <div className="text-2xl font-bold text-slate-800">{uni.cpiIndex}</div>
-               </div>
-               <div className="p-4 bg-slate-50 rounded-lg">
-                 <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">English Programs</div>
-                 <div className="text-2xl font-bold text-slate-800">{uni.englishPrograms}</div>
-               </div>
-               <div className="p-4 bg-slate-50 rounded-lg">
-                 <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Intl. Students</div>
-                 <div className="text-2xl font-bold text-slate-800">{uni.intlStudentPercent}%</div>
-               </div>
+             <div className="p-4 bg-slate-50 rounded-lg">
+               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Subject Rank</div>
+               <div className="text-2xl font-bold text-slate-800">#{uni.rankSubject}</div>
+             </div>
+             <div className="p-4 bg-slate-50 rounded-lg">
+               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Tuition (Year)</div>
+               <div className="text-2xl font-bold text-slate-800">¥{uni.tuition.toLocaleString()}</div>
+             </div>
+             <div className="p-4 bg-slate-50 rounded-lg">
+               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">CPI Index</div>
+               <div className="text-2xl font-bold text-slate-800">{uni.cpiIndex}</div>
+             </div>
+             <div className="p-4 bg-slate-50 rounded-lg">
+               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">English Programs</div>
+               <div className="text-2xl font-bold text-slate-800">{uni.englishPrograms}</div>
+             </div>
+             <div className="p-4 bg-slate-50 rounded-lg">
+               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Intl. Students</div>
+               <div className="text-2xl font-bold text-slate-800">{uni.intlStudentPercent}%</div>
              </div>
            </div>
          </Card>
@@ -356,22 +485,22 @@ const App = () => {
     );
   };
 
+  // ADMIN ONLY AHP VIEW
   const PairwiseComparison = () => {
-    const scaleValues = [9, 8, 7, 6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    // This is a simplified logic for the UI. In reality we'd loop through unique pairs.
-    // For the grid UX requested: NxN Matrix.
-    
     return (
       <div className="max-w-5xl mx-auto">
          <div className="flex justify-between items-center mb-6">
-           <h2 className="text-2xl font-bold text-slate-800">Pairwise Comparison Matrix</h2>
+           <div>
+             <h2 className="text-2xl font-bold text-slate-800">Expert Analysis (AHP Matrix)</h2>
+             <p className="text-sm text-secondary">For Admins/Experts: Define precise weights using Saaty's scale.</p>
+           </div>
            <div className="flex gap-2">
              <Button variant="secondary" onClick={() => {
                const n = criteria.length;
                setAhpMatrix(Array(n).fill(0).map(() => Array(n).fill(1)));
                setAhpResult(null);
-             }}>Reset</Button>
-             <Button onClick={calculateAhpWeights}>Calculate Weights</Button>
+             }}>Reset Matrix</Button>
+             <Button onClick={calculateAhpWeights}>Calculate & Apply Weights</Button>
            </div>
          </div>
          
@@ -411,7 +540,6 @@ const App = () => {
                              <option value="8">8</option>
                              <option value="0.3333">1/3</option>
                              <option value="0.2">1/5</option>
-                             {/* For simplicity, mainly showing integer preferences in this direction */}
                            </select>
                          ) : (
                            <div className="w-full py-2 bg-slate-50 text-slate-500 rounded text-sm">
@@ -461,6 +589,7 @@ const App = () => {
                      </div>
                    ))}
                  </div>
+                 <Button className="w-full mt-6" onClick={() => setView(View.RESULTS)}>View Ranking Results</Button>
                </Card>
              </div>
            )}
@@ -470,30 +599,14 @@ const App = () => {
   };
 
   const ResultsPage = () => {
-    if (!ahpResult) return <div>No results yet.</div>;
+    if (!activeWeights) return <div className="text-center p-10">Please define your preferences or run an analysis first.</div>;
 
-    // Calculate final scores
+    // Calculate final scores based on 1-5 scale logic using ACTIVE WEIGHTS
     const scores: UniversityScore[] = universities.map(uni => {
       let totalScore = 0;
       const breakdown: Record<string, number> = {};
       
-      // Need to normalize values for each criteria first across all unis
       criteria.forEach(c => {
-         // Find min/max for this criterion
-         const values = universities.map(u => {
-           switch(c.id) {
-             case 'C1': return u.rankGlobal;
-             case 'C2': return u.rankSubject;
-             case 'C3': return u.tuition;
-             case 'C4': return u.cpiIndex;
-             case 'C5': return u.englishPrograms;
-             case 'C6': return u.intlStudentPercent;
-             default: return 0;
-           }
-         });
-         const min = Math.min(...values);
-         const max = Math.max(...values);
-         
          const rawVal = (() => {
             switch(c.id) {
              case 'C1': return uni.rankGlobal;
@@ -506,8 +619,12 @@ const App = () => {
            }
          })();
 
-         const normalized = normalizeData(rawVal, min, max, c.type);
-         const weightedScore = normalized * ahpResult.weights[c.id];
+         // Get score from 1-5 based on ranges
+         const scoreVal = getCriterionScore(c.id, rawVal);
+         
+         // Weighted Score using activeWeights
+         const weightedScore = scoreVal * (activeWeights[c.id] || 0);
+         
          breakdown[c.id] = weightedScore;
          totalScore += weightedScore;
       });
@@ -520,39 +637,75 @@ const App = () => {
     return (
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-slate-800">Ranking Results</h2>
-          <p className="text-secondary">Based on your preferences and AHP weighting</p>
+          <h2 className="text-3xl font-bold text-slate-800">Top Recommended Universities</h2>
+          <p className="text-secondary">Ranked based on your specific priorities and our 5-point scoring model.</p>
+        </div>
+        
+        <div className="flex justify-center gap-4 mb-6">
+           <Button variant="secondary" onClick={() => {
+              // If admin, go to Matrix. If student, go to Preferences.
+              if (userRole === UserRole.ADMIN) setView(View.PAIRWISE_COMPARISON);
+              else setView(View.STUDENT_PREFERENCES);
+           }}>
+             <Icons.Sliders /> Adjust Priorities
+           </Button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {sortedScores.map((score, idx) => {
             const uni = universities.find(u => u.id === score.universityId)!;
             return (
-              <Card key={uni.id} className={`flex items-center gap-6 p-4 ${idx === 0 ? 'border-2 border-primary bg-blue-50/30' : ''}`}>
-                <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full bg-slate-100 font-bold text-xl text-slate-500">
-                  {idx + 1}
+              <Card key={uni.id} className={`flex flex-col gap-4 p-6 ${idx === 0 ? 'border-2 border-primary bg-blue-50/30' : ''}`}>
+                <div className="flex items-start gap-4">
+                    <div className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full font-bold text-lg ${idx === 0 ? 'bg-yellow-400 text-white shadow-md' : 'bg-slate-200 text-slate-600'}`}>
+                      {idx + 1}
+                    </div>
+                    {/* Image removed */}
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-800">{uni.name}</h3>
+                            <p className="text-sm text-secondary mb-1">{uni.city}</p>
+                        </div>
+                        <div className="text-right">
+                            <span className="block text-2xl font-bold text-primary">{score.totalScore.toFixed(2)}</span>
+                            <span className="text-xs text-secondary uppercase font-bold">Score</span>
+                        </div>
+                      </div>
+                    </div>
                 </div>
-                <img src={uni.logoUrl} alt={uni.name} className="w-16 h-16 rounded object-cover bg-white" />
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-slate-800">{uni.name}</h3>
-                  <div className="flex gap-4 text-sm text-secondary">
-                    <span>Score: {(score.totalScore * 100).toFixed(2)}</span>
-                    <span>{uni.city}</span>
-                  </div>
+
+                <div className="pl-16">
+                    <p className="text-slate-600 text-sm mb-4">{uni.description}</p>
+                    
+                    <div className="bg-white/50 rounded-lg p-3 border border-gray-100">
+                       <div className="flex justify-between text-xs mb-2 text-gray-500 uppercase font-bold tracking-wider">
+                         <span>Score Breakdown</span>
+                       </div>
+                       <div className="flex h-3 rounded-full overflow-hidden bg-gray-200">
+                         {criteria.map((c, i) => (
+                           <div 
+                             key={c.id} 
+                             className={`h-full ${['bg-blue-500','bg-green-500','bg-purple-500','bg-orange-500','bg-red-500','bg-teal-500'][i]}`}
+                             style={{ width: `${(score.breakdown[c.id] / score.totalScore) * 100}%` }}
+                             title={`${c.name}: ${score.breakdown[c.id].toFixed(2)}`}
+                           />
+                         ))}
+                       </div>
+                       <div className="flex flex-wrap gap-2 mt-2">
+                          {criteria.map((c, i) => (
+                              <div key={c.id} className="flex items-center text-[10px] text-secondary">
+                                 <div className={`w-2 h-2 rounded-full mr-1 ${['bg-blue-500','bg-green-500','bg-purple-500','bg-orange-500','bg-red-500','bg-teal-500'][i]}`}></div>
+                                 {c.name}
+                              </div>
+                          ))}
+                       </div>
+                    </div>
                 </div>
-                <div className="hidden md:block w-48">
-                   {/* Mini bar chart of breakdown */}
-                   <div className="flex h-2 rounded-full overflow-hidden bg-gray-100">
-                     {criteria.map((c, i) => (
-                       <div 
-                         key={c.id} 
-                         className={`h-full ${['bg-blue-500','bg-green-500','bg-purple-500','bg-orange-500','bg-red-500','bg-teal-500'][i]}`}
-                         style={{ width: `${(score.breakdown[c.id] / score.totalScore) * 100}%` }}
-                       />
-                     ))}
-                   </div>
+                
+                <div className="pl-16 flex gap-3">
+                     <Button variant="outline" className="text-sm py-1" onClick={() => { setSelectedUniId(uni.id); setView(View.UNIVERSITY_DETAIL); }}>View Details</Button>
                 </div>
-                <Button variant="outline" onClick={() => { setSelectedUniId(uni.id); setView(View.UNIVERSITY_DETAIL); }}>View</Button>
               </Card>
             );
           })}
@@ -567,17 +720,30 @@ const App = () => {
 
   const CriteriaList = () => (
     <div className="max-w-4xl mx-auto">
-       <h2 className="text-2xl font-bold text-slate-800 mb-6">Evaluation Criteria</h2>
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+       <h2 className="text-2xl font-bold text-slate-800 mb-6">Evaluation Criteria & Scoring Rules</h2>
+       <div className="grid grid-cols-1 gap-4">
          {criteria.map(c => (
            <Card key={c.id}>
              <div className="flex justify-between items-start mb-2">
-               <h3 className="text-lg font-bold">{c.name}</h3>
-               <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${c.type === 'benefit' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                 {c.type}
-               </span>
+               <h3 className="text-lg font-bold">{c.name} ({c.id})</h3>
+               <div className="flex gap-2">
+                <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${c.type === 'benefit' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                  {c.type}
+                </span>
+               </div>
              </div>
-             <p className="text-secondary text-sm">{c.description}</p>
+             <p className="text-secondary text-sm mb-4">{c.description}</p>
+             
+             {/* Quick view of scoring logic per criterion */}
+             <div className="text-xs bg-slate-50 p-3 rounded border border-slate-100">
+               <strong>Scoring Rule (1-5 Scale):</strong>
+               {c.id === 'C1' && " 1-10(5), 11-50(4), 51-100(3), 101-200(2), >200(1)"}
+               {c.id === 'C2' && " 1-20(5), 21-50(4), 51-100(3), 101-200(2), >200(1)"}
+               {c.id === 'C3' && " <25k(5), 25-40k(4), 40-60k(3), 60-80k(2), >80k(1)"}
+               {c.id === 'C4' && " <45(5), 45-54(4), 55-64(3), 65-74(2), >75(1)"}
+               {c.id === 'C5' && " >=5(5), 4(4), 3(3), 2(2), 1(1)"}
+               {c.id === 'C6' && " >=25%(5), 20-24%(4), 15-19%(3), 10-14%(2), <10%(1)"}
+             </div>
            </Card>
          ))}
        </div>
@@ -588,15 +754,15 @@ const App = () => {
     <div>
       <h2 className="text-2xl font-bold text-slate-800 mb-6">Admin Dashboard</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card onClick={() => setView(View.PAIRWISE_COMPARISON)} className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 hover:border-primary cursor-pointer group">
+           <div className="p-4 bg-blue-50 rounded-full mb-4 text-primary group-hover:bg-blue-100"><Icons.Matrix /></div>
+           <h3 className="font-bold">Expert AHP Analysis</h3>
+           <p className="text-xs text-secondary mt-2">Define precise criteria weights using the Pairwise Comparison Matrix.</p>
+        </Card>
         <Card className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 hover:border-primary cursor-pointer">
            <div className="p-4 bg-slate-50 rounded-full mb-4"><Icons.University /></div>
            <h3 className="font-bold">Manage Universities</h3>
            <p className="text-xs text-secondary mt-2">Add, Edit, Delete universities and update their data stats.</p>
-        </Card>
-        <Card className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 hover:border-primary cursor-pointer">
-           <div className="p-4 bg-slate-50 rounded-full mb-4"><Icons.Check /></div>
-           <h3 className="font-bold">Manage Criteria</h3>
-           <p className="text-xs text-secondary mt-2">Update criteria definitions and types.</p>
         </Card>
         <Card className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 hover:border-primary cursor-pointer">
            <div className="p-4 bg-slate-50 rounded-full mb-4"><Icons.User /></div>
@@ -620,8 +786,14 @@ const App = () => {
                <>
                  <button onClick={() => setView(View.DASHBOARD)} className={`text-sm font-medium ${view === View.DASHBOARD ? 'text-primary' : 'text-slate-600'}`}>Dashboard</button>
                  <button onClick={() => setView(View.UNIVERSITY_LIST)} className={`text-sm font-medium ${view === View.UNIVERSITY_LIST ? 'text-primary' : 'text-slate-600'}`}>Universities</button>
-                 <button onClick={() => setView(View.PAIRWISE_COMPARISON)} className={`text-sm font-medium ${view === View.PAIRWISE_COMPARISON ? 'text-primary' : 'text-slate-600'}`}>Compare</button>
+                 <button onClick={() => setView(View.STUDENT_PREFERENCES)} className={`text-sm font-medium ${view === View.STUDENT_PREFERENCES ? 'text-primary' : 'text-slate-600'}`}>Preferences</button>
                </>
+             )}
+             {userRole === UserRole.ADMIN && (
+                <>
+                 <button onClick={() => setView(View.ADMIN_DASHBOARD)} className={`text-sm font-medium ${view === View.ADMIN_DASHBOARD ? 'text-primary' : 'text-slate-600'}`}>Admin Panel</button>
+                 <button onClick={() => setView(View.PAIRWISE_COMPARISON)} className={`text-sm font-medium ${view === View.PAIRWISE_COMPARISON ? 'text-primary' : 'text-slate-600'}`}>AHP Matrix</button>
+                </>
              )}
              {userRole !== UserRole.GUEST && (
                 <div className="flex items-center gap-3 ml-4 border-l pl-4 border-slate-200">
@@ -650,6 +822,7 @@ const App = () => {
       {view === View.UNIVERSITY_LIST && <UniversityList />}
       {view === View.UNIVERSITY_DETAIL && <UniversityDetail />}
       {view === View.CRITERIA_LIST && <CriteriaList />}
+      {view === View.STUDENT_PREFERENCES && <StudentPreferences />}
       {view === View.PAIRWISE_COMPARISON && <PairwiseComparison />}
       {view === View.RESULTS && <ResultsPage />}
       {view === View.ADMIN_DASHBOARD && <AdminDashboard />}
