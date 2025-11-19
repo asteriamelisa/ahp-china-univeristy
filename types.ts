@@ -1,3 +1,4 @@
+
 export enum UserRole {
   GUEST = 'GUEST',
   STUDENT = 'STUDENT', // Decision Maker
@@ -31,6 +32,12 @@ export interface AhpResult {
   weights: Record<string, number>; // criterionId -> weight
   consistencyRatio: number;
   isConsistent: boolean;
+  // Detailed Calculation Engine Data
+  normalizedMatrix: number[][];
+  eigenVector: number[];
+  lambdaMax: number;
+  consistencyIndex: number;
+  randomIndex: number;
 }
 
 export interface UniversityScore {

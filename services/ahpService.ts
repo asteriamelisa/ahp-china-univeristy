@@ -13,21 +13,27 @@ export const calculateAhp = (matrix: number[][], criteriaIds: string[]): AhpResu
     }
   }
 
-  // 2. Normalize Matrix and 3. Calculate Priority Vector (Weights)
-  const weights: Record<string, number> = {};
+  // 2. Normalize Matrix and 3. Calculate Priority Vector (Eigen Vector)
+  const normalizedMatrix: number[][] = [];
   const priorityVector = new Array(n).fill(0);
+  const weights: Record<string, number> = {};
 
   for (let i = 0; i < n; i++) {
+    const normRow: number[] = [];
     let rowSum = 0;
     for (let j = 0; j < n; j++) {
-      rowSum += matrix[i][j] / colSums[j];
+      const val = matrix[i][j] / colSums[j];
+      normRow.push(val);
+      rowSum += val;
     }
+    normalizedMatrix.push(normRow);
+    
     const weight = rowSum / n;
     priorityVector[i] = weight;
     weights[criteriaIds[i]] = weight;
   }
 
-  // 4. Calculate Consistency Ratio (CR)
+  // 4. Calculate Consistency
   // Consistency Vector = Original Matrix * Priority Vector
   const consistencyVector = new Array(n).fill(0);
   for (let i = 0; i < n; i++) {
@@ -36,17 +42,17 @@ export const calculateAhp = (matrix: number[][], criteriaIds: string[]): AhpResu
     }
   }
 
-  // Lambda Max
+  // Lambda Max (Average of Consistency Vector element / Priority Vector element)
   let lambdaMaxSum = 0;
   for (let i = 0; i < n; i++) {
     lambdaMaxSum += consistencyVector[i] / priorityVector[i];
   }
   const lambdaMax = lambdaMaxSum / n;
 
-  // CI
+  // CI (Consistency Index)
   const ci = (lambdaMax - n) / (n - 1);
 
-  // CR
+  // CR (Consistency Ratio)
   const ri = RANDOM_INDEX[n - 1] || 1.49; // Fallback for > 10
   const cr = ci / ri;
 
@@ -54,13 +60,18 @@ export const calculateAhp = (matrix: number[][], criteriaIds: string[]): AhpResu
     weights,
     consistencyRatio: cr,
     isConsistent: cr < 0.1,
+    normalizedMatrix,
+    eigenVector: priorityVector,
+    lambdaMax: lambdaMax,
+    consistencyIndex: ci,
+    randomIndex: ri
   };
 };
 
 // Specific Scoring Logic based on User Requirements
 export const getCriterionScore = (criterionId: string, value: number): number => {
   switch (criterionId) {
-    // C1: Global Rank (Cost) - Lower is better
+    // C1: Global Rank (Benefit - Updated per user request) - Lower rank number is better
     // 1–10: 5, 11–50: 4, 51–100: 3, 101–200: 2, >200: 1
     case 'C1':
       if (value <= 10) return 5;
@@ -69,7 +80,7 @@ export const getCriterionScore = (criterionId: string, value: number): number =>
       if (value <= 200) return 2;
       return 1;
 
-    // C2: Subject Rank (Cost) - Lower is better
+    // C2: Subject Rank (Benefit - Updated per user request) - Lower rank number is better
     // 1–20: 5, 21–50: 4, 51–100: 3, 101–200: 2, >200: 1
     case 'C2':
       if (value <= 20) return 5;

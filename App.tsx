@@ -18,7 +18,9 @@ const Icons = {
   Sliders: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>,
   Edit: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
   Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
-  Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+  Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+  Alert: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+  Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
 };
 
 // --- Types & Enums ---
@@ -105,6 +107,7 @@ const App = () => {
     setUserRole(UserRole.GUEST);
     setView(View.LANDING);
     setActiveWeights(null);
+    setAhpResult(null); // Reset AHP result
   };
 
   // --- AHP Logic (Admin) ---
@@ -113,13 +116,19 @@ const App = () => {
     newMatrix[row][col] = value;
     newMatrix[col][row] = 1 / value;
     setAhpMatrix(newMatrix);
+    setAhpResult(null); // Reset results on change to force recalculation
   };
 
   const calculateAhpWeights = () => {
     const result = calculateAhp(ahpMatrix, criteria.map(c => c.id));
     setAhpResult(result);
-    setActiveWeights(result.weights); // Set active weights for results
-    setView(View.RESULTS);
+  };
+
+  const applyAhpWeights = () => {
+    if (ahpResult) {
+      setActiveWeights(ahpResult.weights);
+      setView(View.RESULTS);
+    }
   };
 
   // --- Simple Preference Logic (Student) ---
@@ -255,54 +264,27 @@ const App = () => {
   );
 
   const StudentPreferences = () => {
-    // Specific labels for each criterion to guide the student
-    // Value 1 = Low Priority/Lenient. Value 5 = High Priority/Strict.
     const criterionOptions: Record<string, { val: number, label: string }[]> = {
-      'C1': [ // Global Rank (Cost)
-        { val: 1, label: "> 200" },
-        { val: 2, label: "101 - 200" },
-        { val: 3, label: "51 - 100" },
-        { val: 4, label: "11 - 50" },
-        { val: 5, label: "Top 10" }
+      'C1': [
+        { val: 1, label: "> 200" }, { val: 2, label: "101 - 200" }, { val: 3, label: "51 - 100" }, { val: 4, label: "11 - 50" }, { val: 5, label: "Top 10" }
       ],
-      'C2': [ // Subject Rank (Cost)
-        { val: 1, label: "> 200" },
-        { val: 2, label: "101 - 200" },
-        { val: 3, label: "51 - 100" },
-        { val: 4, label: "21 - 50" },
-        { val: 5, label: "Top 20" }
+      'C2': [
+        { val: 1, label: "> 200" }, { val: 2, label: "101 - 200" }, { val: 3, label: "51 - 100" }, { val: 4, label: "21 - 50" }, { val: 5, label: "Top 20" }
       ],
-      'C3': [ // Tuition (Cost)
-        { val: 1, label: "≥ 80k" },
-        { val: 2, label: "60k - 79k" },
-        { val: 3, label: "40k - 59k" },
-        { val: 4, label: "25k - 39k" },
-        { val: 5, label: "< 25k" }
+      'C3': [
+        { val: 1, label: "≥ 80k" }, { val: 2, label: "60k - 79k" }, { val: 3, label: "40k - 59k" }, { val: 4, label: "25k - 39k" }, { val: 5, label: "< 25k" }
       ],
-      'C4': [ // CPI (Cost)
-        { val: 1, label: "≥ 75" },
-        { val: 2, label: "65 - 74" },
-        { val: 3, label: "55 - 64" },
-        { val: 4, label: "45 - 54" },
-        { val: 5, label: "< 45" }
+      'C4': [
+        { val: 1, label: "≥ 75" }, { val: 2, label: "65 - 74" }, { val: 3, label: "55 - 64" }, { val: 4, label: "45 - 54" }, { val: 5, label: "< 45" }
       ],
-      'C5': [ // English Programs (Benefit)
-        { val: 1, label: "1" },
-        { val: 2, label: "2" },
-        { val: 3, label: "3" },
-        { val: 4, label: "4" },
-        { val: 5, label: "5+" }
+      'C5': [
+        { val: 1, label: "1" }, { val: 2, label: "2" }, { val: 3, label: "3" }, { val: 4, label: "4" }, { val: 5, label: "5+" }
       ],
-      'C6': [ // Intl Students (Benefit)
-        { val: 1, label: "< 10%" },
-        { val: 2, label: "10 - 14%" },
-        { val: 3, label: "15 - 19%" },
-        { val: 4, label: "20 - 24%" },
-        { val: 5, label: "≥ 25%" }
+      'C6': [
+        { val: 1, label: "< 10%" }, { val: 2, label: "10 - 14%" }, { val: 3, label: "15 - 19%" }, { val: 4, label: "20 - 24%" }, { val: 5, label: "≥ 25%" }
       ]
     };
 
-    // Calculate preview weights for visualization
     const total = Object.values(studentRatings).reduce((a, b) => a + b, 0);
     
     return (
@@ -319,9 +301,7 @@ const App = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-8">
             {criteria.map(c => {
-              const options = criterionOptions[c.id] || [
-                 { val: 1, label: "Not Important" }, { val: 5, label: "Very Important" }
-              ];
+              const options = criterionOptions[c.id] || [{ val: 1, label: "Not Important" }, { val: 5, label: "Very Important" }];
 
               return (
                 <div key={c.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -750,11 +730,16 @@ const App = () => {
              <Card className="overflow-hidden border-0 shadow-md p-0">
                 <div className="bg-slate-800 p-4 text-white flex justify-between items-center">
                    <h3 className="font-bold">Comparison Input</h3>
-                   <Button variant="outline" className="text-xs border-white text-white hover:bg-slate-700" onClick={() => {
-                     const n = criteria.length;
-                     setAhpMatrix(Array(n).fill(0).map(() => Array(n).fill(1)));
-                     setAhpResult(null);
-                   }}>Reset All to 1</Button>
+                   <div className="flex gap-2">
+                      <Button variant="outline" className="text-xs border-white text-white hover:bg-slate-700" onClick={calculateAhpWeights}>
+                        <Icons.Refresh /> Recalculate
+                      </Button>
+                      <Button variant="outline" className="text-xs border-white text-white hover:bg-slate-700" onClick={() => {
+                        const n = criteria.length;
+                        setAhpMatrix(Array(n).fill(0).map(() => Array(n).fill(1)));
+                        setAhpResult(null);
+                      }}>Reset</Button>
+                   </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
@@ -783,7 +768,7 @@ const App = () => {
                                 </div>
                               ) : i < j ? (
                                 <select 
-                                  className="w-full p-2 bg-white border border-blue-200 rounded text-xs focus:ring-2 focus:ring-primary focus:border-primary outline-none font-medium shadow-sm"
+                                  className="w-full p-2 bg-blue-50 text-slate-900 border-2 border-blue-300 rounded-md text-xs font-bold focus:ring-2 focus:ring-primary focus:border-primary outline-none shadow-sm cursor-pointer hover:bg-white hover:border-blue-500 transition-all"
                                   value={ahpMatrix[i][j]}
                                   onChange={(e) => handleMatrixChange(i, j, Number(e.target.value))}
                                 >
@@ -824,307 +809,346 @@ const App = () => {
                   </table>
                 </div>
              </Card>
-           </div>
-           
-           {/* Sidebar: Legend & Actions */}
-           <div className="lg:col-span-4 space-y-6">
-             <div className="sticky top-24">
-               <Card className="bg-gradient-to-br from-white to-slate-50 border-slate-200 mb-4">
-                 <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                   <Icons.Matrix /> Saaty Scale Legend
-                 </h3>
-                 <div className="space-y-2 text-sm">
-                    <div className="flex justify-between p-2 bg-white rounded border border-slate-100 shadow-sm">
-                      <span className="font-bold text-slate-700">1</span>
-                      <span className="text-slate-500">Equal Importance</span>
-                    </div>
-                    <div className="flex justify-between p-2 bg-white rounded border border-slate-100 shadow-sm">
-                      <span className="font-bold text-slate-700">3</span>
-                      <span className="text-slate-500">Moderate Importance</span>
-                    </div>
-                    <div className="flex justify-between p-2 bg-white rounded border border-slate-100 shadow-sm">
-                      <span className="font-bold text-slate-700">5</span>
-                      <span className="text-slate-500">Strong Importance</span>
-                    </div>
-                    <div className="flex justify-between p-2 bg-white rounded border border-slate-100 shadow-sm">
-                      <span className="font-bold text-slate-700">7</span>
-                      <span className="text-slate-500">Very Strong Importance</span>
-                    </div>
-                    <div className="flex justify-between p-2 bg-white rounded border border-slate-100 shadow-sm">
-                      <span className="font-bold text-slate-700">9</span>
-                      <span className="text-slate-500">Extreme Importance</span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-2 italic px-1">
-                      * Values 2, 4, 6, 8 represent intermediate judgments.
-                    </p>
+
+             {/* AHP Calculation Engine View (Result Details) */}
+             {ahpResult && (
+               <div className="animate-fade-in p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
+                 <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                       <Icons.Chart /> Calculation Engine View
+                    </h3>
                  </div>
-               </Card>
 
-               <Card className="bg-white border-slate-200">
-                 <Button className="w-full mb-4 py-3 shadow-lg" onClick={calculateAhpWeights}>
-                   <Icons.Chart /> Calculate Weights
+                 {/* Consistency Badge */}
+                 <div className={`p-4 rounded-lg border mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 ${ahpResult.isConsistent ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                    <div>
+                      <h4 className="font-bold text-lg flex items-center gap-2">
+                        {ahpResult.isConsistent ? <Icons.Check /> : <Icons.Alert />}
+                        {ahpResult.isConsistent ? 'Consistent Matrix (CR ≤ 0.1)' : 'Inconsistent Matrix (CR > 0.1)'}
+                      </h4>
+                      {!ahpResult.isConsistent && <p className="text-sm mt-1 font-medium">The judgments are logically inconsistent. Please adjust the matrix values.</p>}
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <span className="text-xs uppercase font-bold opacity-70">Consistency Ratio</span>
+                        <div className="text-3xl font-bold">{ahpResult.consistencyRatio.toFixed(4)}</div>
+                    </div>
+                 </div>
+
+                 {/* Stats Grid */}
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div className="bg-slate-50 p-3 rounded border border-slate-100">
+                       <div className="text-xs text-slate-500 uppercase font-bold">Lambda Max (λmax)</div>
+                       <div className="text-xl font-bold text-slate-800">{ahpResult.lambdaMax.toFixed(4)}</div>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded border border-slate-100">
+                       <div className="text-xs text-slate-500 uppercase font-bold">Consistency Index (CI)</div>
+                       <div className="text-xl font-bold text-slate-800">{ahpResult.consistencyIndex.toFixed(4)}</div>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded border border-slate-100">
+                       <div className="text-xs text-slate-500 uppercase font-bold">Random Index (RI)</div>
+                       <div className="text-xl font-bold text-slate-800">{ahpResult.randomIndex.toFixed(2)}</div>
+                    </div>
+                 </div>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Normalized Matrix */}
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider border-b pb-1">Normalized Matrix</h4>
+                      <div className="overflow-x-auto border rounded-lg">
+                        <table className="w-full text-xs">
+                          <thead className="bg-slate-50">
+                            <tr>
+                              <th className="p-2"></th>
+                              {criteria.map(c => <th key={c.id} className="p-2 text-center text-slate-500">{c.id}</th>)}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {ahpResult.normalizedMatrix.map((row, i) => (
+                              <tr key={i}>
+                                <td className="p-2 font-bold text-slate-600 text-center bg-slate-50">{criteria[i].id}</td>
+                                {row.map((val, j) => (
+                                  <td key={j} className="p-2 text-center text-slate-600 font-mono">{val.toFixed(3)}</td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Eigen Vector (Priority Weights) */}
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider border-b pb-1">Eigen Vector (Priority Weights)</h4>
+                      <div className="space-y-3">
+                        {ahpResult.eigenVector.map((val, i) => (
+                           <div key={i} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-500 w-6">{criteria[i].id}</span>
+                                <span className="text-sm font-medium text-slate-700 truncate w-24">{criteria[i].name}</span>
+                              </div>
+                              <div className="flex-1 mx-3 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                 <div className="h-full bg-blue-600" style={{ width: `${val * 100}%` }}></div>
+                              </div>
+                              <span className="text-sm font-bold text-blue-700 w-12 text-right">{(val * 100).toFixed(1)}%</span>
+                           </div>
+                        ))}
+                      </div>
+                    </div>
+                 </div>
+               </div>
+             )}
+           </div>
+
+           {/* Sidebar: Scale & Actions */}
+           <div className="lg:col-span-4 space-y-6">
+              {/* Saaty Scale Legend */}
+              <Card className="bg-blue-50 border-blue-100">
+                <h3 className="font-bold text-slate-800 mb-4">Saaty Reference Scale</h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between p-2 bg-white rounded shadow-sm">
+                    <span className="font-bold text-primary">1</span>
+                    <span>Equal Importance</span>
+                  </div>
+                  <div className="flex justify-between p-2 bg-white rounded shadow-sm">
+                    <span className="font-bold text-primary">3</span>
+                    <span>Moderate Importance</span>
+                  </div>
+                  <div className="flex justify-between p-2 bg-white rounded shadow-sm">
+                    <span className="font-bold text-primary">5</span>
+                    <span>Strong Importance</span>
+                  </div>
+                  <div className="flex justify-between p-2 bg-white rounded shadow-sm">
+                    <span className="font-bold text-primary">7</span>
+                    <span>Very Strong Importance</span>
+                  </div>
+                  <div className="flex justify-between p-2 bg-white rounded shadow-sm">
+                    <span className="font-bold text-primary">9</span>
+                    <span>Extreme Importance</span>
+                  </div>
+                  <div className="text-center text-slate-400 pt-2 italic">
+                    2, 4, 6, 8 are intermediate values
+                  </div>
+                </div>
+              </Card>
+
+              {/* Actions */}
+              <Card>
+                 <h3 className="font-bold text-slate-800 mb-4">Actions</h3>
+                 <p className="text-sm text-secondary mb-6">
+                   Once the matrix is consistent (CR ≤ 0.1), you can apply these weights to the global system ranking.
+                 </p>
+                 <Button 
+                    className="w-full justify-center" 
+                    onClick={applyAhpWeights} 
+                    disabled={!ahpResult || !ahpResult.isConsistent}
+                 >
+                   <Icons.Check /> Apply Weights & View Ranking
                  </Button>
-
-                 {ahpResult && (
-                   <div className="animate-fade-in">
-                     <div className={`p-4 rounded-lg mb-4 border ${ahpResult.isConsistent ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                       <div className="flex justify-between items-center mb-1">
-                         <span className="text-xs font-bold uppercase opacity-70">Consistency Ratio (CR)</span>
-                         <span className={`text-lg font-bold ${ahpResult.isConsistent ? 'text-green-700' : 'text-red-700'}`}>
-                           {ahpResult.consistencyRatio.toFixed(4)}
-                         </span>
-                       </div>
-                       <p className="text-xs">
-                         {ahpResult.isConsistent 
-                           ? <span className="text-green-700 flex items-center gap-1"><Icons.Check /> Consistent Matrix</span>
-                           : <span className="text-red-700 flex items-center gap-1">⚠️ Inconsistent (>0.1)</span>}
-                       </p>
-                     </div>
-                     
-                     <h3 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">Derived Weights</h3>
-                     <div className="space-y-3">
-                       {criteria.map(c => (
-                         <div key={c.id}>
-                           <div className="flex justify-between text-xs mb-1">
-                             <span className="font-medium text-slate-600">{c.name}</span>
-                             <span className="font-bold text-primary">{(ahpResult.weights[c.id] * 100).toFixed(1)}%</span>
-                           </div>
-                           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                             <div 
-                               className="h-full bg-primary rounded-full transition-all duration-500" 
-                               style={{ width: `${ahpResult.weights[c.id] * 100}%` }} 
-                             />
-                           </div>
-                         </div>
-                       ))}
-                     </div>
-                     <Button className="w-full mt-6" variant="secondary" onClick={() => setView(View.RESULTS)}>
-                        Apply & View Results
-                     </Button>
-                   </div>
-                 )}
-               </Card>
-             </div>
+                 {!ahpResult && <p className="text-xs text-center mt-2 text-slate-400">Please calculate first.</p>}
+              </Card>
            </div>
          </div>
       </div>
     );
   };
 
+  const CriteriaList = () => (
+    <div className="max-w-4xl mx-auto">
+      <Button variant="secondary" className="mb-6" onClick={() => setView(View.DASHBOARD)}>
+         <Icons.ArrowLeft /> Back
+      </Button>
+      <h2 className="text-3xl font-bold text-slate-800 mb-6">Criteria Explanation</h2>
+      <div className="grid gap-6">
+        {criteria.map(c => (
+          <div key={c.id} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-start gap-4">
+            <div className={`p-3 rounded-full ${c.type === 'benefit' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+              {c.type === 'benefit' ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg> : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>}
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-800">{c.name} ({c.id})</h3>
+              <span className={`text-xs uppercase font-bold tracking-wider ${c.type === 'benefit' ? 'text-green-600' : 'text-red-600'}`}>
+                {c.type} Attribute
+              </span>
+              <p className="mt-2 text-slate-600">{c.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   const ResultsPage = () => {
-    if (!activeWeights) return <div className="text-center p-10">Please define your preferences or run an analysis first.</div>;
+    // Calculate Scores
+    const scores: UniversityScore[] = useMemo(() => {
+      if (!activeWeights) return [];
 
-    // Calculate final scores based on 1-5 scale logic using ACTIVE WEIGHTS
-    const scores: UniversityScore[] = universities.map(uni => {
-      let totalScore = 0;
-      const breakdown: Record<string, number> = {};
-      
-      criteria.forEach(c => {
-         const rawVal = (() => {
-            switch(c.id) {
-             case 'C1': return uni.rankGlobal;
-             case 'C2': return uni.rankSubject;
-             case 'C3': return uni.tuition;
-             case 'C4': return uni.cpiIndex;
-             case 'C5': return uni.englishPrograms;
-             case 'C6': return uni.intlStudentPercent;
-             default: return 0;
-           }
-         })();
+      return universities.map(uni => {
+        const breakdown: Record<string, number> = {};
+        let totalScore = 0;
 
-         // Get score from 1-5 based on ranges
-         const scoreVal = getCriterionScore(c.id, rawVal);
-         
-         // Weighted Score using activeWeights
-         const weightedScore = scoreVal * (activeWeights[c.id] || 0);
-         
-         breakdown[c.id] = weightedScore;
-         totalScore += weightedScore;
-      });
+        criteria.forEach(c => {
+          // 1. Get Raw Value
+          let rawVal = 0;
+          if (c.id === 'C1') rawVal = uni.rankGlobal;
+          if (c.id === 'C2') rawVal = uni.rankSubject;
+          if (c.id === 'C3') rawVal = uni.tuition;
+          if (c.id === 'C4') rawVal = uni.cpiIndex;
+          if (c.id === 'C5') rawVal = uni.englishPrograms;
+          if (c.id === 'C6') rawVal = uni.intlStudentPercent;
 
-      return { universityId: uni.id, totalScore, breakdown };
-    });
+          // 2. Convert to Score (1-5)
+          const score1to5 = getCriterionScore(c.id, rawVal);
 
-    const sortedScores = [...scores].sort((a, b) => b.totalScore - a.totalScore);
+          // 3. Multiply by Weight
+          const weight = activeWeights[c.id] || 0;
+          const weightedScore = score1to5 * weight;
+          
+          breakdown[c.id] = weightedScore;
+          totalScore += weightedScore;
+        });
+
+        return { universityId: uni.id, totalScore, breakdown };
+      }).sort((a, b) => b.totalScore - a.totalScore);
+    }, [universities, activeWeights, criteria]);
+
+    if (!activeWeights) return <div>No weights calculated.</div>;
 
     return (
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-slate-800">Top Recommended Universities</h2>
-          <p className="text-secondary">Ranked based on your specific priorities and our 5-point scoring model.</p>
-          {userRole === UserRole.ADMIN && (
-             <span className="inline-block mt-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">Admin AHP Weights Active</span>
-          )}
-        </div>
-        
-        <div className="flex justify-center gap-4 mb-6">
-           <Button variant="secondary" onClick={() => {
-              // If admin, go to Matrix. If student, go to Preferences.
-              if (userRole === UserRole.ADMIN) setView(View.PAIRWISE_COMPARISON);
-              else setView(View.STUDENT_PREFERENCES);
-           }}>
-             <Icons.Sliders /> Adjust Priorities
-           </Button>
-           {userRole === UserRole.ADMIN && (
-              <Button variant="outline" onClick={() => setView(View.ADMIN_DASHBOARD)}>Back to Dashboard</Button>
-           )}
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+             <h2 className="text-3xl font-bold text-slate-800">Ranking Results</h2>
+             <p className="text-secondary">Based on your preferences and the AHP analysis.</p>
+          </div>
+          <div className="flex gap-3">
+             <Button variant="secondary" onClick={() => setView(userRole === UserRole.ADMIN ? View.ADMIN_DASHBOARD : View.DASHBOARD)}>
+               Dashboard
+             </Button>
+             <Button variant="outline" onClick={() => window.print()}>Export PDF</Button>
+          </div>
         </div>
 
-        <div className="space-y-6">
-          {sortedScores.map((score, idx) => {
-            const uni = universities.find(u => u.id === score.universityId)!;
-            return (
-              <Card key={uni.id} className={`flex flex-col gap-4 p-6 ${idx === 0 ? 'border-2 border-primary bg-blue-50/30' : ''}`}>
-                <div className="flex items-start gap-4">
-                    <div className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full font-bold text-lg ${idx === 0 ? 'bg-yellow-400 text-white shadow-md' : 'bg-slate-200 text-slate-600'}`}>
-                      {idx + 1}
-                    </div>
-                    {/* Image removed */}
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+             {scores.map((score, index) => {
+               const uni = universities.find(u => u.id === score.universityId);
+               if (!uni) return null;
+               return (
+                 <Card key={score.universityId} className={`relative overflow-hidden border-2 ${index === 0 ? 'border-yellow-400 shadow-lg' : 'border-transparent'}`}>
+                   {index === 0 && <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 font-bold px-4 py-1 rounded-bl-xl z-10">#1 Top Choice</div>}
+                   
+                   <div className="flex items-start gap-4 relative z-0">
+                      <div className={`w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-xl ${index === 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-500'}`}>
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
                             <h3 className="text-xl font-bold text-slate-800">{uni.name}</h3>
-                            <p className="text-sm text-secondary mb-1">{uni.city}</p>
+                            <p className="text-sm text-secondary mb-2">{uni.city}</p>
+                          </div>
+                          <div className="text-right">
+                             <div className="text-2xl font-bold text-primary">{score.totalScore.toFixed(3)}</div>
+                             <div className="text-xs text-slate-400 uppercase font-bold">Score</div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                            <span className="block text-2xl font-bold text-primary">{score.totalScore.toFixed(2)}</span>
-                            <span className="text-xs text-secondary uppercase font-bold">Score</span>
+                        
+                        <p className="text-sm text-slate-600 leading-snug mb-4 pr-12">
+                          {uni.description}
+                        </p>
+
+                        <div className="mt-4 h-2 bg-slate-100 rounded-full overflow-hidden flex">
+                          {criteria.map((c, i) => (
+                            <div 
+                              key={c.id}
+                              className={`h-full ${['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-teal-500'][i % 6]}`}
+                              style={{ width: `${(score.breakdown[c.id] / score.totalScore) * 100}%` }}
+                              title={`${c.name}: ${score.breakdown[c.id].toFixed(2)}`}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex justify-between mt-1 text-[10px] text-slate-400">
+                          <span>Score Contribution Breakdown</span>
                         </div>
                       </div>
-                    </div>
-                </div>
+                   </div>
+                 </Card>
+               );
+             })}
+          </div>
 
-                <div className="pl-16">
-                    <p className="text-slate-600 text-sm mb-4">{uni.description}</p>
-                    
-                    <div className="bg-white/50 rounded-lg p-3 border border-gray-100">
-                       <div className="flex justify-between text-xs mb-2 text-gray-500 uppercase font-bold tracking-wider">
-                         <span>Score Breakdown</span>
-                       </div>
-                       <div className="flex h-3 rounded-full overflow-hidden bg-gray-200">
-                         {criteria.map((c, i) => (
-                           <div 
-                             key={c.id} 
-                             className={`h-full ${['bg-blue-500','bg-green-500','bg-purple-500','bg-orange-500','bg-red-500','bg-teal-500'][i]}`}
-                             style={{ width: `${(score.breakdown[c.id] / score.totalScore) * 100}%` }}
-                             title={`${c.name}: ${score.breakdown[c.id].toFixed(2)}`}
-                           />
-                         ))}
-                       </div>
-                       <div className="flex flex-wrap gap-2 mt-2">
-                          {criteria.map((c, i) => (
-                              <div key={c.id} className="flex items-center text-[10px] text-secondary">
-                                 <div className={`w-2 h-2 rounded-full mr-1 ${['bg-blue-500','bg-green-500','bg-purple-500','bg-orange-500','bg-red-500','bg-teal-500'][i]}`}></div>
-                                 {c.name}
-                              </div>
-                          ))}
-                       </div>
-                    </div>
-                </div>
-                
-                <div className="pl-16 flex gap-3">
-                     <Button variant="outline" className="text-sm py-1" onClick={() => { setSelectedUniId(uni.id); setView(View.UNIVERSITY_DETAIL); }}>View Details</Button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-
-        <div className="flex justify-center pt-8">
-          <Button variant="secondary" onClick={() => window.print()}>Export Report (Print/PDF)</Button>
+          <div className="lg:col-span-1">
+            <div className="sticky top-8 space-y-6">
+               <Card className="bg-slate-50">
+                 <h3 className="font-bold text-slate-800 mb-4">Criteria Weights Used</h3>
+                 <div className="space-y-3">
+                    {Object.entries(activeWeights).sort(([,a], [,b]) => b - a).map(([cid, weight]) => {
+                      const c = criteria.find(cr => cr.id === cid);
+                      return (
+                        <div key={cid} className="flex items-center justify-between text-sm">
+                          <span className="text-slate-600">{c?.name}</span>
+                          <span className="font-bold text-slate-800">{(weight * 100).toFixed(1)}%</span>
+                        </div>
+                      );
+                    })}
+                 </div>
+               </Card>
+            </div>
+          </div>
         </div>
       </div>
     );
   };
 
-  const CriteriaList = () => (
-    <div className="max-w-4xl mx-auto">
-       <h2 className="text-2xl font-bold text-slate-800 mb-6">Evaluation Criteria & Scoring Rules</h2>
-       <div className="grid grid-cols-1 gap-4">
-         {criteria.map(c => (
-           <Card key={c.id}>
-             <div className="flex justify-between items-start mb-2">
-               <h3 className="text-lg font-bold">{c.name} ({c.id})</h3>
-               <div className="flex gap-2">
-                <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${c.type === 'benefit' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                  {c.type}
-                </span>
-               </div>
-             </div>
-             <p className="text-secondary text-sm mb-4">{c.description}</p>
-             
-             {/* Quick view of scoring logic per criterion */}
-             <div className="text-xs bg-slate-50 p-3 rounded border border-slate-100">
-               <strong>Scoring Rule (1-5 Scale):</strong>
-               {c.id === 'C1' && " 1-10(5), 11-50(4), 51-100(3), 101-200(2), >200(1)"}
-               {c.id === 'C2' && " 1-20(5), 21-50(4), 51-100(3), 101-200(2), >200(1)"}
-               {c.id === 'C3' && " <25k(5), 25-40k(4), 40-60k(3), 60-80k(2), >80k(1)"}
-               {c.id === 'C4' && " <45(5), 45-54(4), 55-64(3), 65-74(2), >75(1)"}
-               {c.id === 'C5' && " >=5(5), 4(4), 3(3), 2(2), 1(1)"}
-               {c.id === 'C6' && " >=25%(5), 20-24%(4), 15-19%(3), 10-14%(2), <10%(1)"}
-             </div>
-           </Card>
-         ))}
-       </div>
-    </div>
-  );
+  // --- Routing / Layout ---
 
-  // --- Layout Wrapper ---
-  const Layout = ({ children }: any) => (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="bg-surface border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-primary text-xl cursor-pointer" onClick={() => setView(View.LANDING)}>
-            <Icons.University /> UniSelect
-          </div>
-          <nav className="flex items-center gap-6">
-             {userRole === UserRole.STUDENT && (
-               <>
-                 <button onClick={() => setView(View.DASHBOARD)} className={`text-sm font-medium ${view === View.DASHBOARD ? 'text-primary' : 'text-slate-600'}`}>Dashboard</button>
-                 <button onClick={() => setView(View.UNIVERSITY_LIST)} className={`text-sm font-medium ${view === View.UNIVERSITY_LIST ? 'text-primary' : 'text-slate-600'}`}>Universities</button>
-                 <button onClick={() => setView(View.STUDENT_PREFERENCES)} className={`text-sm font-medium ${view === View.STUDENT_PREFERENCES ? 'text-primary' : 'text-slate-600'}`}>Preferences</button>
-               </>
-             )}
-             {userRole === UserRole.ADMIN && (
-                <>
-                 <button onClick={() => setView(View.ADMIN_DASHBOARD)} className={`text-sm font-medium ${view === View.ADMIN_DASHBOARD ? 'text-primary' : 'text-slate-600'}`}>Admin Panel</button>
-                 <button onClick={() => setView(View.PAIRWISE_COMPARISON)} className={`text-sm font-medium ${view === View.PAIRWISE_COMPARISON ? 'text-primary' : 'text-slate-600'}`}>AHP Matrix</button>
-                 <button onClick={() => setView(View.MANAGE_UNIVERSITIES)} className={`text-sm font-medium ${view === View.MANAGE_UNIVERSITIES ? 'text-primary' : 'text-slate-600'}`}>Data</button>
-                </>
-             )}
-             {userRole !== UserRole.GUEST && (
-                <div className="flex items-center gap-3 ml-4 border-l pl-4 border-slate-200">
-                  <div className="text-right hidden md:block">
-                    <div className="text-xs font-bold text-slate-800">{userRole === UserRole.ADMIN ? 'Administrator' : 'Student User'}</div>
-                  </div>
-                  <button onClick={handleLogout} className="text-slate-500 hover:text-red-500"><Icons.LogOut /></button>
-                </div>
-             )}
-          </nav>
-        </div>
-      </header>
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
-        {children}
-      </main>
-    </div>
-  );
-
-  // --- Route Renderer ---
-  if (view === View.LANDING) return <LandingPage />;
-  if (view === View.LOGIN) return <Layout><LoginPage /></Layout>;
+  const renderContent = () => {
+    switch (view) {
+      case View.LANDING: return <LandingPage />;
+      case View.LOGIN: return <LoginPage />;
+      case View.DASHBOARD: return <StudentDashboard />;
+      case View.ADMIN_DASHBOARD: return <AdminDashboard />;
+      case View.UNIVERSITY_LIST: return <UniversityList />;
+      case View.UNIVERSITY_DETAIL: return <UniversityDetail />;
+      case View.CRITERIA_LIST: return <CriteriaList />;
+      case View.MANAGE_UNIVERSITIES: return <ManageUniversities />;
+      case View.PAIRWISE_COMPARISON: return <PairwiseComparison />;
+      case View.STUDENT_PREFERENCES: return <StudentPreferences />;
+      case View.RESULTS: return <ResultsPage />;
+      default: return <LandingPage />;
+    }
+  };
 
   return (
-    <Layout>
-      {view === View.DASHBOARD && userRole === UserRole.STUDENT && <StudentDashboard />}
-      {view === View.UNIVERSITY_LIST && <UniversityList />}
-      {view === View.UNIVERSITY_DETAIL && <UniversityDetail />}
-      {view === View.CRITERIA_LIST && <CriteriaList />}
-      {view === View.STUDENT_PREFERENCES && <StudentPreferences />}
-      {view === View.PAIRWISE_COMPARISON && <PairwiseComparison />}
-      {view === View.MANAGE_UNIVERSITIES && <ManageUniversities />}
-      {view === View.RESULTS && <ResultsPage />}
-      {view === View.ADMIN_DASHBOARD && <AdminDashboard />}
-    </Layout>
+    <div className="min-h-screen bg-slate-50/50 font-sans text-slate-900">
+      {view !== View.LANDING && view !== View.LOGIN && (
+         <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+             <div className="flex justify-between h-16">
+               <div className="flex items-center cursor-pointer" onClick={() => setView(userRole === UserRole.ADMIN ? View.ADMIN_DASHBOARD : View.DASHBOARD)}>
+                 <div className="text-primary mr-2"><Icons.University /></div>
+                 <span className="font-bold text-xl tracking-tight text-slate-800">UniSelect China</span>
+               </div>
+               <div className="flex items-center gap-4">
+                 {userRole !== UserRole.GUEST && (
+                   <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                     <Icons.User />
+                     <span className="font-medium">{userRole === UserRole.ADMIN ? 'Admin' : 'Student'}</span>
+                   </div>
+                 )}
+                 <Button variant="secondary" onClick={handleLogout} className="text-sm px-3">
+                   {userRole === UserRole.GUEST ? 'Home' : 'Logout'} <Icons.LogOut />
+                 </Button>
+               </div>
+             </div>
+           </div>
+         </nav>
+      )}
+
+      <div className={`transition-all duration-300 ${view !== View.LANDING && view !== View.LOGIN ? 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8' : ''}`}>
+        {renderContent()}
+      </div>
+    </div>
   );
 };
 
