@@ -60,6 +60,7 @@ export const UNIVERSITIES: University[] = [
     englishPrograms: 8, 
     intlStudentPercent: 12, 
     website: '#',
+    references: {}
   },
   {
     id: 'A2',
@@ -74,12 +75,13 @@ export const UNIVERSITIES: University[] = [
     englishPrograms: 6, 
     intlStudentPercent: 16, 
     website: '#',
+    references: {}
   },
   {
     id: 'A3',
     name: 'Universitas A3',
     city: 'Shanghai',
-    description: 'A prestigious university in Shanghai, renowned for its liberal arts and international atmosphere.',
+    description: 'This university in Shanghai is renowned for its liberal arts and international atmosphere.',
     logoUrl: '',
     rankGlobal: 34, 
     rankSubject: 45, 
@@ -88,6 +90,7 @@ export const UNIVERSITIES: University[] = [
     englishPrograms: 15, 
     intlStudentPercent: 20, 
     website: '#',
+    references: {}
   },
   {
     id: 'A4',
@@ -102,6 +105,7 @@ export const UNIVERSITIES: University[] = [
     englishPrograms: 4, 
     intlStudentPercent: 15, 
     website: '#',
+    references: {}
   },
   {
     id: 'A5',
@@ -116,6 +120,7 @@ export const UNIVERSITIES: University[] = [
     englishPrograms: 5, 
     intlStudentPercent: 11, 
     website: '#',
+    references: {}
   },
   {
     id: 'A6',
@@ -130,6 +135,7 @@ export const UNIVERSITIES: University[] = [
     englishPrograms: 2, 
     intlStudentPercent: 5, 
     website: '#',
+    references: {}
   },
   {
     id: 'A7',
@@ -144,6 +150,7 @@ export const UNIVERSITIES: University[] = [
     englishPrograms: 3, 
     intlStudentPercent: 8, 
     website: '#',
+    references: {}
   },
   {
     id: 'A8',
@@ -158,6 +165,7 @@ export const UNIVERSITIES: University[] = [
     englishPrograms: 4, 
     intlStudentPercent: 9, 
     website: '#',
+    references: {}
   },
   {
     id: 'A9',
@@ -172,6 +180,7 @@ export const UNIVERSITIES: University[] = [
     englishPrograms: 4, 
     intlStudentPercent: 9, 
     website: '#',
+    references: {}
   },
   {
     id: 'A10',
@@ -186,6 +195,7 @@ export const UNIVERSITIES: University[] = [
     englishPrograms: 3, 
     intlStudentPercent: 7, 
     website: '#',
+    references: {}
   },
 ];
 

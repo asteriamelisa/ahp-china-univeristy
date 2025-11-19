@@ -20,7 +20,9 @@ const Icons = {
   Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
   Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
   Alert: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
-  Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+  Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+  Link: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+  ExternalLink: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
 };
 
 // --- Types & Enums ---
@@ -440,30 +442,27 @@ const App = () => {
            
            <h3 className="font-bold text-lg mb-4 border-b pb-2">Key Metrics</h3>
            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-             <div className="p-4 bg-slate-50 rounded-lg">
-               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Global Rank</div>
-               <div className="text-2xl font-bold text-slate-800">#{uni.rankGlobal}</div>
-             </div>
-             <div className="p-4 bg-slate-50 rounded-lg">
-               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Subject Rank</div>
-               <div className="text-2xl font-bold text-slate-800">#{uni.rankSubject}</div>
-             </div>
-             <div className="p-4 bg-slate-50 rounded-lg">
-               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Tuition (Year)</div>
-               <div className="text-2xl font-bold text-slate-800">¥{uni.tuition.toLocaleString()}</div>
-             </div>
-             <div className="p-4 bg-slate-50 rounded-lg">
-               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">CPI Index</div>
-               <div className="text-2xl font-bold text-slate-800">{uni.cpiIndex}</div>
-             </div>
-             <div className="p-4 bg-slate-50 rounded-lg">
-               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">English Programs</div>
-               <div className="text-2xl font-bold text-slate-800">{uni.englishPrograms}</div>
-             </div>
-             <div className="p-4 bg-slate-50 rounded-lg">
-               <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">Intl. Students</div>
-               <div className="text-2xl font-bold text-slate-800">{uni.intlStudentPercent}%</div>
-             </div>
+             {[
+                { label: 'Global Rank', value: `#${uni.rankGlobal}`, id: 'C1' },
+                { label: 'Subject Rank', value: `#${uni.rankSubject}`, id: 'C2' },
+                { label: 'Tuition (Year)', value: `¥${uni.tuition.toLocaleString()}`, id: 'C3' },
+                { label: 'CPI Index', value: uni.cpiIndex, id: 'C4' },
+                { label: 'English Programs', value: uni.englishPrograms, id: 'C5' },
+                { label: 'Intl. Students', value: `${uni.intlStudentPercent}%`, id: 'C6' },
+             ].map((item) => {
+               const refLink = uni.references?.[item.id];
+               return (
+                 <div key={item.id} className="p-4 bg-slate-50 rounded-lg">
+                   <div className="text-xs text-secondary uppercase font-bold tracking-wider mb-1">{item.label}</div>
+                   <div className="text-2xl font-bold text-slate-800">{item.value}</div>
+                   {refLink && (
+                     <a href={refLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 hover:underline mt-2">
+                       Source <Icons.ExternalLink />
+                     </a>
+                   )}
+                 </div>
+               );
+             })}
            </div>
          </Card>
       </div>
@@ -592,6 +591,18 @@ const App = () => {
       }
     };
 
+    const handleReferenceChange = (criterionId: string, value: string) => {
+      if (editForm) {
+        setEditForm({
+          ...editForm,
+          references: {
+            ...(editForm.references || {}),
+            [criterionId]: value
+          }
+        });
+      }
+    };
+
     return (
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
@@ -681,12 +692,16 @@ const App = () => {
                           const val = editForm?.[item.field];
                           const score = getCriterionScore(item.id, Number(val));
                           return (
-                            <div key={item.id} className="relative">
-                              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{item.label}</label>
-                              <div className="flex items-center gap-2">
+                            <div key={item.id} className="relative p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
+                              <div className="flex justify-between mb-1">
+                                <label className="block text-xs font-bold text-slate-500 uppercase">{item.label}</label>
+                                <span className="text-[10px] font-mono text-slate-400">{item.id}</span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2 mb-3">
                                 <input 
                                   type="number" 
-                                  className="w-full p-2 border rounded" 
+                                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none" 
                                   value={val} 
                                   onChange={(e) => handleChange(item.field as keyof University, Number(e.target.value))} 
                                 />
@@ -694,6 +709,18 @@ const App = () => {
                                    <span className="text-[10px] leading-none uppercase font-bold opacity-60">Lvl</span>
                                    <span className="font-bold text-lg leading-none">{score}</span>
                                 </div>
+                              </div>
+
+                              {/* Reference URL Input */}
+                              <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                                 <div className="text-slate-400"><Icons.Link /></div>
+                                 <input 
+                                   type="text" 
+                                   className="flex-1 text-xs border-b border-slate-200 focus:border-primary outline-none bg-transparent py-1 text-slate-600 placeholder:text-slate-300"
+                                   placeholder={`Source URL for ${item.label}`}
+                                   value={editForm?.references?.[item.id] || ''}
+                                   onChange={(e) => handleReferenceChange(item.id, e.target.value)}
+                                 />
                               </div>
                             </div>
                           );
@@ -795,10 +822,9 @@ const App = () => {
                                   </optgroup>
                                 </select>
                               ) : (
-                                <div className="flex items-center justify-center">
-                                   <div className="w-full py-1 bg-slate-100 text-slate-500 rounded text-xs text-center">
-                                      {ahpMatrix[i][j] < 1 ? `1/${Math.round(1/ahpMatrix[i][j])}` : ahpMatrix[i][j].toFixed(2)}
-                                   </div>
+                                <div className="flex flex-col items-center justify-center py-1 bg-slate-100 text-slate-500 rounded text-xs text-center">
+                                    <span className="font-mono font-bold">{ahpMatrix[i][j].toFixed(4)}</span>
+                                    {ahpMatrix[i][j] < 1 && <span className="text-[10px] opacity-70 scale-90">(1/{Math.round(1/ahpMatrix[i][j])})</span>}
                                 </div>
                               )}
                             </td>
@@ -850,10 +876,10 @@ const App = () => {
                     </div>
                  </div>
                  
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Normalized Matrix */}
+                 <div className="space-y-8">
+                    {/* Decimal Judgment Matrix */}
                     <div>
-                      <h4 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider border-b pb-1">Normalized Matrix</h4>
+                      <h4 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider border-b pb-1">Judgment Matrix (Decimal)</h4>
                       <div className="overflow-x-auto border rounded-lg">
                         <table className="w-full text-xs">
                           <thead className="bg-slate-50">
@@ -863,11 +889,11 @@ const App = () => {
                             </tr>
                           </thead>
                           <tbody className="divide-y">
-                            {ahpResult.normalizedMatrix.map((row, i) => (
+                            {ahpMatrix.map((row, i) => (
                               <tr key={i}>
                                 <td className="p-2 font-bold text-slate-600 text-center bg-slate-50">{criteria[i].id}</td>
                                 {row.map((val, j) => (
-                                  <td key={j} className="p-2 text-center text-slate-600 font-mono">{val.toFixed(3)}</td>
+                                  <td key={j} className="p-2 text-center text-slate-600 font-mono">{val.toFixed(4)}</td>
                                 ))}
                               </tr>
                             ))}
@@ -876,22 +902,53 @@ const App = () => {
                       </div>
                     </div>
 
-                    {/* Eigen Vector (Priority Weights) */}
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider border-b pb-1">Eigen Vector (Priority Weights)</h4>
-                      <div className="space-y-3">
-                        {ahpResult.eigenVector.map((val, i) => (
-                           <div key={i} className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-500 w-6">{criteria[i].id}</span>
-                                <span className="text-sm font-medium text-slate-700 truncate w-24">{criteria[i].name}</span>
-                              </div>
-                              <div className="flex-1 mx-3 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                 <div className="h-full bg-blue-600" style={{ width: `${val * 100}%` }}></div>
-                              </div>
-                              <span className="text-sm font-bold text-blue-700 w-12 text-right">{(val * 100).toFixed(1)}%</span>
-                           </div>
-                        ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {/* Normalized Matrix */}
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider border-b pb-1">Normalized Matrix</h4>
+                        <div className="overflow-x-auto border rounded-lg">
+                          <table className="w-full text-xs">
+                            <thead className="bg-slate-50">
+                              <tr>
+                                <th className="p-2"></th>
+                                {criteria.map(c => <th key={c.id} className="p-2 text-center text-slate-500">{c.id}</th>)}
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                              {ahpResult.normalizedMatrix.map((row, i) => (
+                                <tr key={i}>
+                                  <td className="p-2 font-bold text-slate-600 text-center bg-slate-50">{criteria[i].id}</td>
+                                  {row.map((val, j) => (
+                                    <td key={j} className="p-2 text-center text-slate-600 font-mono">{val.toFixed(3)}</td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Eigen Vector (Priority Weights) */}
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider border-b pb-1">Eigen Vector (Priority Weights)</h4>
+                        <div className="space-y-3">
+                          {ahpResult.eigenVector.map((val, i) => (
+                             <div key={i} className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-500 w-6">{criteria[i].id}</span>
+                                  <span className="text-sm font-medium text-slate-700 truncate w-24">{criteria[i].name}</span>
+                                </div>
+                                <div className="flex-1 mx-3 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                   <div className="h-full bg-blue-600" style={{ width: `${val * 100}%` }}></div>
+                                </div>
+                                <span className="text-sm font-bold text-blue-700 w-12 text-right">{(val * 100).toFixed(1)}%</span>
+                             </div>
+                          ))}
+                          <div className="flex justify-between items-center border-t pt-2 mt-2 text-slate-800 font-bold text-sm">
+                             <span>Total</span>
+                             <span>{ahpResult.eigenVector.reduce((a,b) => a+b, 0).toFixed(3)} ({Math.round(ahpResult.eigenVector.reduce((a,b) => a+b, 0) * 100)}%)</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                  </div>

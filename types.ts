@@ -26,6 +26,7 @@ export interface University {
   englishPrograms: number;
   intlStudentPercent: number;
   website: string;
+  references?: Record<string, string>; // Map of Criterion ID (e.g., 'C1') to Source URL
 }
 
 export interface AhpResult {
