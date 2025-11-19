@@ -494,62 +494,96 @@ const App = () => {
 
   const AdminDashboard = () => (
     <div className="space-y-8">
+      {/* Welcome Header */}
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex items-start gap-6">
+           <div className="bg-primary/10 p-4 rounded-full text-primary">
+             <Icons.User />
+           </div>
+           <div>
+             <h2 className="text-3xl font-bold text-slate-800 mb-2">Welcome, Administrator</h2>
+             <p className="text-slate-600 leading-relaxed max-w-3xl">
+               This <strong>Decision Support System (DSS)</strong> uses the <strong>Analytic Hierarchy Process (AHP)</strong> to help students select the best Master's Degree program in China. As an admin, your role is to maintain data accuracy and provide expert criteria weightings.
+             </p>
+           </div>
+        </div>
+      </div>
+
+      {/* Step-by-Step Guide */}
       <div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">Admin Dashboard</h2>
-        <p className="text-secondary max-w-3xl">
-          Welcome to the control panel. Here you can manage the university data that students see and perform advanced criteria weighting using AHP.
-        </p>
+        <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <span className="bg-slate-800 text-white text-xs px-2 py-1 rounded">GUIDE</span> 
+          System Workflow
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Step 1 */}
+          <Card className="relative overflow-hidden border-t-4 border-t-blue-500">
+            <div className="absolute -right-4 -top-4 text-9xl text-slate-50 opacity-50 font-bold select-none">1</div>
+            <div className="relative z-10">
+              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold mb-4">1</div>
+              <h4 className="text-lg font-bold text-slate-800 mb-2">Manage Data</h4>
+              <p className="text-sm text-slate-600 mb-4">
+                Input raw data for universities (Tuition, Ranking, etc.). The system automatically normalizes this into a <strong>1-5 Score</strong>.
+              </p>
+              <Button variant="secondary" className="w-full text-xs" onClick={() => setView(View.MANAGE_UNIVERSITIES)}>
+                Go to Data Mgmt
+              </Button>
+            </div>
+          </Card>
+
+          {/* Step 2 */}
+          <Card className="relative overflow-hidden border-t-4 border-t-purple-500">
+             <div className="absolute -right-4 -top-4 text-9xl text-slate-50 opacity-50 font-bold select-none">2</div>
+             <div className="relative z-10">
+              <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold mb-4">2</div>
+              <h4 className="text-lg font-bold text-slate-800 mb-2">AHP Weighting</h4>
+              <p className="text-sm text-slate-600 mb-4">
+                Use the <strong>Pairwise Comparison Matrix</strong> to compare criteria importance (e.g., Cost vs Quality). The system calculates mathematical weights using the Saaty Scale.
+              </p>
+              <Button variant="secondary" className="w-full text-xs" onClick={() => setView(View.PAIRWISE_COMPARISON)}>
+                Go to AHP Matrix
+              </Button>
+             </div>
+          </Card>
+
+          {/* Step 3 */}
+          <Card className="relative overflow-hidden border-t-4 border-t-green-500">
+             <div className="absolute -right-4 -top-4 text-9xl text-slate-50 opacity-50 font-bold select-none">3</div>
+             <div className="relative z-10">
+              <div className="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center font-bold mb-4">3</div>
+              <h4 className="text-lg font-bold text-slate-800 mb-2">Generate Results</h4>
+              <p className="text-sm text-slate-600 mb-4">
+                The system combines the <strong>Score Levels</strong> (from Step 1) with the <strong>Weights</strong> (from Step 2) to produce a final ranking of universities.
+              </p>
+              <div className="text-xs bg-slate-100 p-2 rounded text-center text-slate-500">
+                Viewed in "Results" page
+              </div>
+             </div>
+          </Card>
+        </div>
       </div>
 
+      {/* Detailed Concepts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Explanation Card: AHP */}
-        <Card className="bg-blue-50 border-blue-100 p-6">
-           <div className="flex items-start gap-4">
-             <div className="p-3 bg-white rounded-full text-primary shadow-sm"><Icons.Matrix /></div>
-             <div>
-               <h3 className="text-lg font-bold text-slate-800 mb-2">AHP (Analytic Hierarchy Process)</h3>
-               <p className="text-sm text-slate-700 leading-relaxed">
-                 A structured technique for organizing and analyzing complex decisions. As an admin, you use the <strong>Pairwise Comparison Matrix</strong> to compare criteria (e.g., "Is Tuition more important than Ranking?"). 
-                 <br/><br/>
-                 The system calculates <strong>Weights</strong> from your judgments. These weights are then used to rank universities.
-               </p>
-             </div>
-           </div>
-        </Card>
-
-        {/* Explanation Card: Data Management */}
-        <Card className="bg-purple-50 border-purple-100 p-6">
-           <div className="flex items-start gap-4">
-             <div className="p-3 bg-white rounded-full text-purple-600 shadow-sm"><Icons.University /></div>
-             <div>
-               <h3 className="text-lg font-bold text-slate-800 mb-2">Data & Scoring Levels</h3>
-               <p className="text-sm text-slate-700 leading-relaxed">
-                 You can edit university data (Rank, Tuition, etc.). The system automatically converts these raw values into a <strong>Score Level (1-5)</strong> based on predefined rules. 
-                 <br/><br/>
-                 <span className="font-semibold">Impact:</span> Changing a value here immediately updates the ranking calculations for all students.
-               </p>
-             </div>
-           </div>
-        </Card>
-      </div>
-
-      <h3 className="text-xl font-bold text-slate-800 mt-8">Quick Actions</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card onClick={() => setView(View.PAIRWISE_COMPARISON)} className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 hover:border-primary cursor-pointer group transition-all">
-           <div className="p-4 bg-blue-50 rounded-full mb-4 text-primary group-hover:bg-blue-100"><Icons.Matrix /></div>
-           <h3 className="font-bold">Go to AHP Matrix</h3>
-           <p className="text-xs text-secondary mt-2">Calculate criteria weights</p>
-        </Card>
-        <Card onClick={() => setView(View.MANAGE_UNIVERSITIES)} className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 hover:border-primary cursor-pointer group transition-all">
-           <div className="p-4 bg-slate-50 rounded-full mb-4 text-slate-600 group-hover:bg-slate-100"><Icons.Edit /></div>
-           <h3 className="font-bold">Manage Universities</h3>
-           <p className="text-xs text-secondary mt-2">Edit data & view score levels</p>
-        </Card>
-        <Card className="flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-gray-200 opacity-50 cursor-not-allowed">
-           <div className="p-4 bg-slate-50 rounded-full mb-4"><Icons.User /></div>
-           <h3 className="font-bold">User Logs</h3>
-           <p className="text-xs text-secondary mt-2">Feature coming soon</p>
-        </Card>
+         <div className="bg-white p-6 rounded-xl border border-slate-200">
+            <h4 className="font-bold text-slate-800 mb-3">What is AHP?</h4>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              The <strong>Analytic Hierarchy Process</strong> is a method to derive ratio scales from paired comparisons. It allows you to say "Criterion A is extremely more important than Criterion B". 
+              <br/><br/>
+              The system checks your <strong>Consistency Ratio (CR)</strong>. If CR &lt; 0.1, your judgments are consistent. If not, you should adjust the matrix.
+            </p>
+         </div>
+         <div className="bg-white p-6 rounded-xl border border-slate-200">
+            <h4 className="font-bold text-slate-800 mb-3">Scoring Logic (1-5)</h4>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              To ensure fair comparison, all raw data (e.g., "30,000 RMB") is converted to a standard 1-5 scale:
+              <ul className="list-disc ml-4 mt-2 space-y-1">
+                <li><strong>5 (Excellent):</strong> Very cheap tuition, Top 10 rank, etc.</li>
+                <li><strong>1 (Poor):</strong> Expensive tuition, Low rank, etc.</li>
+              </ul>
+            </p>
+         </div>
       </div>
     </div>
   );
